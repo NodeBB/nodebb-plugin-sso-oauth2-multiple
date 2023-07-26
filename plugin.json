@@ -1,0 +1,19 @@
+{
+	"id": "nodebb-plugin-sso-oauth2-multiple",
+	"name": "NodeBB Multiple OAuth2 SSO",
+	"description": "NodeBB Plugin that configures multiple OAuth2 login endpoints",
+	"url": "https://github.com/nodebb/nodebb-plugin-sso-oauth2-multiple",
+	"library": "./library.js",
+	"hooks": [
+		{ "hook": "static:app.load", "method": "init" },
+		{ "hook": "static:api.routes", "method": "addRoutes" },
+		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
+		{ "hook": "static:user.delete", "method": "deleteUserData" },
+		{ "hook": "filter:user.whitelistFields", "method": "whitelistFields" },
+		{ "hook": "filter:auth.init", "method": "getStrategy" }
+	],
+	"modules": {
+		"../admin/plugins/sso-oauth2-multiple.js": "./static/lib/admin.js"
+	},
+	"templates": "static/templates"
+}
