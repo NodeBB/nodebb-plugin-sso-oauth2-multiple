@@ -8,7 +8,7 @@
 
 	<div class="mb-3">
 		<label class="form-label" for="name">Name</label>
-		<input type="text" id="name" name="name" title="Name" class="form-control" placeholder="Name" value="{./name}">
+		<input type="text" id="name" name="name" title="Name" class="form-control" placeholder="Name" value="{./name}" {{{ if ./name }}}readonly{{{ end }}}>
 		<p class="form-text">
 			Enter something unique to your OAuth provider in lowercase, like <code>github</code>, or <code>nodebb</code>.
 		</p>
