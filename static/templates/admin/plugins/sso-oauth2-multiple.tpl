@@ -15,12 +15,13 @@
 						<thead>
 							<th>Name</th>
 							<th>Enabled</th>
+							<th>Callback URL <a href="#" data-action="callback-help"><i class="fa fa-question-circle"></i></a></th>
 							<th><span class="visually-hidden">Actions</span></th>
 						</thead>
 						<tbody>
 							{{{ if !strategies.length }}}
 							<tr>
-								<td colspan="3">
+								<td colspan="4">
 									<div class="alert alert-info text-center mb-0"><em>No OAuth2 endpoints configured.</em></div>
 								</td>
 							</tr>
@@ -31,6 +32,7 @@
 								<td>
 									{{{ if ./enabled }}}&check;{{{ else }}}&cross;{{{ end }}}
 								</td>
+								<td>{./callbackUrl}</td>
 								<td class="text-end">
 									<a href="#" data-action="edit">Edit</a>
 									&nbsp;&nbsp;&nbsp;
@@ -41,7 +43,7 @@
 						</tbody>
 						<tfoot>
 							<tr>
-								<td colspan="3">
+								<td colspan="4">
 									<button type="button" class="btn btn-success btn-sm pull-right" data-action="new"><i class="fa fa-plus"></i> New Endpoint</button>
 								</td>
 							</tr>

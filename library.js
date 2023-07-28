@@ -94,6 +94,8 @@ OAuth.addRoutes = async ({ router, middleware }) => {
 		middleware.admin.checkPrivileges,
 	];
 
+	routeHelpers.setupApiRoute(router, 'get', '/oauth2-multiple/discover', middlewares, controllers.getOpenIdMetadata);
+
 	routeHelpers.setupApiRoute(router, 'post', '/oauth2-multiple/strategies', middlewares, controllers.editStrategy);
 	routeHelpers.setupApiRoute(router, 'get', '/oauth2-multiple/strategies/:name', middlewares, controllers.getStrategy);
 	routeHelpers.setupApiRoute(router, 'delete', '/oauth2-multiple/strategies/:name', middlewares, controllers.deleteStrategy);
@@ -115,6 +117,7 @@ OAuth.listStrategies = async () => {
 	strategies.forEach((strategy, idx) => {
 		strategy.name = names[idx];
 		strategy.enabled = strategy.enabled === 'true';
+		strategy.callbackUrl = `${nconf.get('url')}/auth/${names[idx]}/callback`;
 	});
 
 	return strategies;
