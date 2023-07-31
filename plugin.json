@@ -10,7 +10,7 @@
 		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
 		{ "hook": "static:user.delete", "method": "deleteUserData" },
 		{ "hook": "filter:user.whitelistFields", "method": "whitelistFields" },
-		{ "hook": "filter:auth.init", "method": "getStrategy" }
+		{ "hook": "filter:auth.init", "method": "loadStrategies" }
 	],
 	"modules": {
 		"../admin/plugins/sso-oauth2-multiple.js": "./static/lib/admin.js"
