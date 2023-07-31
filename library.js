@@ -76,6 +76,10 @@ OAuth.loadStrategies = async (strategies) => {
 		callbackURL,
 		passReqToCallback: true,
 	}, async (req, token, secret, { id, displayName, email }, done) => {
+		if (![id, displayName, email].every(Boolean)) {
+			return done(new Error('insufficient-scope'));
+		}
+
 		const user = await OAuth.login({
 			name,
 			oAuthid: id,
@@ -92,12 +96,12 @@ OAuth.loadStrategies = async (strategies) => {
 		passport.use(configured[idx].name, strategy);
 	});
 
-	strategies.push(...configured.map(({ name }) => ({
+	strategies.push(...configured.map(({ name, scope }) => ({
 		name,
 		url: `/auth/${name}`,
 		callbackURL: `/auth/${name}/callback`,
 		icon: 'fa-check-square',
-		scope: 'openid email profile',
+		scope: scope || 'openid email profile',
 	})));
 
 	return strategies;

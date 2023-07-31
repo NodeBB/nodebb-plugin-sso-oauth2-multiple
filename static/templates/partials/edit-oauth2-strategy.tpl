@@ -54,5 +54,17 @@
 				If a relative path is specified here, we will assume the hostname from the authorization URL.
 			</p>
 		</div>
+
+		<div class="mb-3">
+			<label class="form-label" for="scope">User Info URL</label>
+			<input type="text" id="scope" name="scope" title="User Info URL" class="form-control" placeholder="openid email profile" value="{./scope}">
+			<p class="form-text">
+				Scopes are used to limit the information returned by the user info URL to only that which is necessary.
+				Different implementations use different values.
+			</p>
+			<p class="form-text">
+				<strong>Default</strong> &mdash; <code>openid email profile</code>
+			</p>
+		</div>
 	</fieldset>
 </form>
