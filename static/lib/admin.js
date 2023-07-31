@@ -24,6 +24,7 @@ export function init() {
 					confirm({
 						title,
 						message,
+						size: 'xl',
 						callback: handleEditStrategy,
 						onShown: handleAutoDiscovery,
 					});
@@ -39,6 +40,7 @@ export function init() {
 					confirm({
 						title,
 						message,
+						size: 'xl',
 						callback: handleEditStrategy,
 						onShown: handleAutoDiscovery,
 					});

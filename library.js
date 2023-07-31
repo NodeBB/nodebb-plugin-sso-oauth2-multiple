@@ -96,11 +96,20 @@ OAuth.loadStrategies = async (strategies) => {
 		passport.use(configured[idx].name, strategy);
 	});
 
-	strategies.push(...configured.map(({ name, scope }) => ({
+	strategies.push(...configured.map(({ name, scope, loginLabel, registerLabel, faIcon }) => ({
 		name,
 		url: `/auth/${name}`,
 		callbackURL: `/auth/${name}/callback`,
 		icon: 'fa-check-square',
+		icons: {
+			normal: `fa ${faIcon || 'fa-right-to-bracket'}`,
+			square: `fa ${faIcon || 'fa-right-to-bracket'}`,
+		},
+		labels: {
+			login: loginLabel || 'Log In',
+			register: registerLabel || 'Register',
+		},
+		color: '#666',
 		scope: scope || 'openid email profile',
 	})));
 
