@@ -45,6 +45,8 @@ OAuth.addAdminNavigation = (header) => {
 
 OAuth.listStrategies = async (full) => {
 	const names = await db.getSortedSetMembers('oauth2-multiple:strategies');
+	names.sort();
+
 	const strategies = await db.getObjects(names.map(name => `oauth2-multiple:strategies:${name}`), full ? undefined : ['enabled']);
 	strategies.forEach((strategy, idx) => {
 		strategy.name = names[idx];
