@@ -5,7 +5,7 @@
   "main": "library.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/julianlam/nodebb-plugin-sso-oauth"
+    "url": "https://github.com/NodeBB/nodebb-plugin-sso-oauth2-multiple"
   },
   "keywords": [
     "nodebb",
@@ -23,7 +23,7 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/julianlam/nodebb-plugin-sso-oauth/issues"
+    "url": "https://github.com/NodeBB/nodebb-plugin-sso-oauth2-multiple/issues"
   },
   "readme": "",
   "readmeFilename": "README.md",
@@ -34,7 +34,7 @@
     "passport-oauth": "~1.0.0"
   },
   "nbbpm": {
-    "compatibility": "^1.0.1",
+    "compatibility": "^3.3.0",
     "index": false
   },
   "devDependencies": {
