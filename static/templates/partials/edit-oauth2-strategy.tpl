@@ -32,7 +32,7 @@
 			<label class="form-label" for="faIcon">FontAwesome Icon</label>
 			<input type="text" id="name" name="faIcon" title="Name" class="form-control" placeholder="FontAwesome Icon" value="{./faIcon}">
 			<p class="form-text">
-				Enter the name of the FontAwesome icon you wish to use in the login/register button.
+				<strong>Optional</strong> — enter the name of the FontAwesome icon you wish to use in the login/register button.
 				If none is set, then <i class="fa fa-right-to-bracket"></i> will be used.
 			</p>
 		</div>
