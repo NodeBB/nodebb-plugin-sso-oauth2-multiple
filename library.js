@@ -139,10 +139,10 @@ OAuth.getUserProfile = function (name, userRoute, accessToken, done) {
 	});
 };
 
-OAuth.parseUserReturn = ({ sub, nickname, picture, email/* , email_verified */ }) => {
+OAuth.parseUserReturn = ({ id, sub, name, nickname, preferred_username, picture, email/* , email_verified */ }) => {
 	const profile = {};
-	profile.id = sub;
-	profile.displayName = nickname;
+	profile.id = id || sub;
+	profile.displayName = nickname || preferred_username || name;
 	profile.picture = picture;
 	profile.email = email;
 
