@@ -12,6 +12,10 @@ import { render } from 'benchpress';
 export function init() {
 	// settings.load('sso-oauth2-multiple', $('.sso-oauth2-multiple-settings'));
 	// $('#save').on('click', saveSettings);
+	const saveEl = document.getElementById('save');
+	if (saveEl) {
+		saveEl.classList.toggle('d-none', true);
+	}
 
 	const formEl = document.querySelector('.sso-oauth2-multiple-settings');
 	formEl.addEventListener('click', async (e) => {
