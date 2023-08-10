@@ -1,9 +1,11 @@
+/* eslint-disable import/no-unresolved */
+
 'use strict';
 
 // import * as settings from 'settings';
-import { alert, confirm } from 'bootbox';
+import { alert as bootboxAlert, confirm } from 'bootbox';
 import { get, post, del } from 'api';
-import { error } from 'alerts';
+import { alert, error } from 'alerts';
 import { render } from 'benchpress';
 
 // eslint-disable-next-line import/prefer-default-export
@@ -67,7 +69,7 @@ export function init() {
 				}
 
 				case 'callback-help': {
-					alert({
+					bootboxAlert({
 						title: 'What is the callback URL?',
 						message: `
 							When you create a new OAuth2 client at the provider, you need to specify a callback URL.
@@ -96,6 +98,17 @@ function handleEditStrategy(ok) {
 		const tbodyEl = document.querySelector('#strategies tbody');
 		tbodyEl.innerHTML = html;
 		$modal.modal('hide');
+
+		alert({
+			alert_id: 'oauth-change-restart-prompt',
+			title: 'Restart may be required',
+			message: 'You may need to restart your NodeBB for changes to take effect.<br /><br />You can click this box to do so now.',
+			type: 'info',
+			timeout: 8000,
+			clickfn: () => {
+				socket.emit('admin.restart');
+			},
+		});
 	}).catch(error);
 
 	return false;
