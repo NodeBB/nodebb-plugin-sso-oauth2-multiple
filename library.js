@@ -1,14 +1,14 @@
 'use strict';
 
-const User = require.main.require('./src/user');
-const Groups = require.main.require('./src/groups');
-const db = require.main.require('./src/database');
-const authenticationController = require.main.require('./src/controllers/authentication');
-const routeHelpers = require.main.require('./src/routes/helpers');
-
 const passport = module.parent.require('passport');
 const nconf = module.parent.require('nconf');
 const winston = module.parent.require('winston');
+
+const db = require.main.require('./src/database');
+const user = require.main.require('./src/user');
+const plugins = require.main.require('./src/plugins');
+const authenticationController = require.main.require('./src/controllers/authentication');
+const routeHelpers = require.main.require('./src/routes/helpers');
 
 const OAuth = module.exports;
 
@@ -77,7 +77,8 @@ OAuth.loadStrategies = async (strategies) => {
 		clientSecret,
 		callbackURL,
 		passReqToCallback: true,
-	}, async (req, token, secret, { id, displayName, email }, done) => {
+	}, async (req, token, secret, profile, done) => {
+		const { id, displayName, email } = profile;
 		if (![id, displayName, email].every(Boolean)) {
 			return done(new Error('insufficient-scope'));
 		}
@@ -89,6 +90,7 @@ OAuth.loadStrategies = async (strategies) => {
 			email,
 		});
 
+		winston.verbose(`[plugin/sso-oauth2-multiple] Successful login to uid ${user.uid} via ${name} (remote id ${id})`);
 		authenticationController.onSuccessfulLogin(req, user.uid);
 		done(null, user);
 	}));
@@ -139,12 +141,16 @@ OAuth.getUserProfile = function (name, userRoute, accessToken, done) {
 	});
 };
 
-OAuth.parseUserReturn = ({ id, sub, name, nickname, preferred_username, picture, email/* , email_verified */ }) => {
-	const profile = {};
-	profile.id = id || sub;
-	profile.displayName = nickname || preferred_username || name;
-	profile.picture = picture;
-	profile.email = email;
+OAuth.parseUserReturn = ({
+	provider, id, sub, name, nickname, preferred_username, picture, email, /* , email_verified */
+}) => {
+	const profile = {
+		provider,
+		id: id || sub,
+		displayName: nickname || preferred_username || name,
+		picture,
+		email,
+	};
 
 	return profile;
 };
@@ -157,22 +163,22 @@ OAuth.login = async (payload) => {
 	}
 
 	// Check for user via email fallback
-	uid = await User.getUidByEmail(payload.email);
+	uid = await user.getUidByEmail(payload.email);
 	if (!uid) {
 		const { email } = payload;
 
 		// New user
-		uid = await User.create({
+		uid = await user.create({
 			username: payload.handle,
 		});
 
 		// Automatically confirm user email
-		await User.setUserField(uid, 'email', email);
-		await User.email.confirmByUid(uid);
+		await user.setUserField(uid, 'email', email);
+		await user.email.confirmByUid(uid);
 	}
 
 	// Save provider-specific information to the user
-	await User.setUserField(uid, `${payload.name}Id`, payload.oAuthid);
+	await user.setUserField(uid, `${payload.name}Id`, payload.oAuthid);
 	await db.setObjectField(`${payload.name}Id:uid`, payload.oAuthid, uid);
 
 	return { uid };
@@ -182,7 +188,7 @@ OAuth.getUidByOAuthid = async (name, oAuthid) => db.getObjectField(`${name}Id:ui
 
 OAuth.deleteUserData = async (data) => {
 	const names = await db.getSortedSetMembers('oauth2-multiple:strategies');
-	const oAuthIds = await User.getUserFields(data.uid, names.map(name => `${name}Id`));
+	const oAuthIds = await user.getUserFields(data.uid, names.map(name => `${name}Id`));
 
 	await Promise.all(oAuthIds.map(async (oAuthIdToDelete, idx) => {
 		if (!oAuthIdToDelete) {
