@@ -102,7 +102,7 @@ OAuth.loadStrategies = async (strategies) => {
 		name,
 		url: `/auth/${name}`,
 		callbackURL: `/auth/${name}/callback`,
-		icon: 'fa-check-square',
+		icon: faIcon || 'fa-right-to-bracket',
 		icons: {
 			normal: `fa ${faIcon || 'fa-right-to-bracket'}`,
 			square: `fa ${faIcon || 'fa-right-to-bracket'}`,
