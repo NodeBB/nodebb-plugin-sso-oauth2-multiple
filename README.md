@@ -17,3 +17,12 @@ If you'd like to help this plugin play nice with other providers, please
 ## Screenshots
 
 ![OAuth2 Strategy Editing](./screenshots/configure.png)
+
+## For Developers
+
+Other plugins can interact with this plugin, as it fires the following hooks:
+
+1. On successful login — `action:oauth2.login` — passes in `(name, user, profile)`
+	* `name` is the strategy name.
+	* `user` is the local NodeBB user (probably just the `uid`).
+	* `profile` is the remote profile as retrieved by this plugin.

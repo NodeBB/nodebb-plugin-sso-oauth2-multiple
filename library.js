@@ -93,6 +93,8 @@ OAuth.loadStrategies = async (strategies) => {
 		winston.verbose(`[plugin/sso-oauth2-multiple] Successful login to uid ${user.uid} via ${name} (remote id ${id})`);
 		authenticationController.onSuccessfulLogin(req, user.uid);
 		done(null, user);
+
+		plugins.hooks.fire('action:oauth2.login', { name, user, profile });
 	}));
 
 	configs.forEach((strategy, idx) => {
