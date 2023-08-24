@@ -99,9 +99,19 @@
 				We offer some common adjustments below.
 			</p>
 
-			<div class="form-check form-switch">
+			<div class="form-check form-switch mb-3">
 				<input type="checkbox" class="form-check-input" id="usernameViaEmail" name="usernameViaEmail" {{{ if (./usernameViaEmail == "on") }}}checked{{{ end }}}>
 				<label for="usernameViaEmail" class="form-check-label">Fall back to email as username if no username available (e.g. <code><strong>username</strong>@example.org</code>)</label>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label" for="idKey">Alternative <code>id</code> key</label>
+				<input type="text" id="idKey" name="idKey" title="Alternative id key" class="form-control" placeholder="e.g. auth0Id" value="{./idKey}">
+				<p class="form-text">
+					The properties <code>id</code> and <code>sub</code> are normally used.
+					In case you wish to use an alternative key returned in the User Info URL as the key, enter it here.
+					If that field is empty or missing, then we will fall back to the defaults.
+				</p>
 			</div>
 		</div>
 	</div>

@@ -157,10 +157,10 @@ OAuth.parseUserReturn = async (provider, profile) => {
 		id, sub, name, nickname, preferred_username, picture,
 		email, /* , email_verified */
 	} = profile;
-	const { usernameViaEmail } = await OAuth.getStrategy(provider);
+	const { usernameViaEmail, idKey } = await OAuth.getStrategy(provider);
 	const normalized = {
 		provider,
-		id: id || sub,
+		id: profile[idKey] || id || sub,
 		displayName: nickname || preferred_username || name,
 		picture,
 		email,
