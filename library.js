@@ -61,7 +61,7 @@ async function getStrategies(names, full) {
 	const strategies = await db.getObjects(names.map(name => `oauth2-multiple:strategies:${name}`), full ? undefined : ['enabled']);
 	strategies.forEach((strategy, idx) => {
 		strategy.name = names[idx];
-		strategy.enabled = strategy.enabled === 'true';
+		strategy.enabled = strategy.enabled === 'true' || strategy.enabled === true;
 		strategy.callbackUrl = `${nconf.get('url')}/auth/${names[idx]}/callback`;
 	});
 
