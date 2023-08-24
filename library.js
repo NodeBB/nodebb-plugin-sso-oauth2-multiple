@@ -191,15 +191,16 @@ OAuth.getUidByOAuthid = async (name, oAuthid) => db.getObjectField(`${name}Id:ui
 OAuth.deleteUserData = async (data) => {
 	const names = await db.getSortedSetMembers('oauth2-multiple:strategies');
 	const oAuthIds = await user.getUserFields(data.uid, names.map(name => `${name}Id`));
+	delete oAuthIds.uid;
 
-	await Promise.all(oAuthIds.map(async (oAuthIdToDelete, idx) => {
-		if (!oAuthIdToDelete) {
-			return;
+	const promises = [];
+	for (const [provider, id] of Object.entries(oAuthIds)) {
+		if (id) {
+			promises.push(db.deleteObjectField(`${provider}Id:uid`, id));
 		}
+	}
 
-		const name = names[idx];
-		await db.deleteObjectField(`${name}Id:uid`, oAuthIdToDelete);
-	}));
+	await Promise.all(promises);
 };
 
 // If this filter is not there, the deleteUserData function will fail when getting the oauthId for deletion.
