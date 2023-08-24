@@ -93,20 +93,22 @@ OAuth.loadStrategies = async (strategies) => {
 		if (![id, displayName, email].every(Boolean)) {
 			return done(new Error('insufficient-scope'));
 		}
+		try {
+			const user = await OAuth.login({
+				name,
+				oAuthid: id,
+				handle: displayName,
+				email,
+			});
+			winston.verbose(`[plugin/sso-oauth2-multiple] Successful login to uid ${user.uid} via ${name} (remote id ${id})`);
+			await authenticationController.onSuccessfulLogin(req, user.uid);
+			await OAuth.assignGroups({ provider: name, user, profile });
+			done(null, user);
 
-		const user = await OAuth.login({
-			name,
-			oAuthid: id,
-			handle: displayName,
-			email,
-		});
-
-		winston.verbose(`[plugin/sso-oauth2-multiple] Successful login to uid ${user.uid} via ${name} (remote id ${id})`);
-		authenticationController.onSuccessfulLogin(req, user.uid);
-		OAuth.assignGroups({ provider: name, user, profile });
-		done(null, user);
-
-		plugins.hooks.fire('action:oauth2.login', { name, user, profile });
+			plugins.hooks.fire('action:oauth2.login', { name, user, profile });
+		} catch (err) {
+			done(err);
+		}
 	}));
 
 	configs.forEach((strategy, idx) => {
