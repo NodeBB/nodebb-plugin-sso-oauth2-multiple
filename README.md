@@ -14,6 +14,13 @@ Support for other OAuth2 providers is _explicitly not guaranteed_.
 If you'd like to help this plugin play nice with other providers, please
 [open an issue](https://github.com/NodeBB/nodebb-plugin-sso-oauth2-multiple/issues).
 
+## Role-Based Access Control
+
+This plugin is able to sort users into specific user groups based on user roles.
+You can maintain a map of roles to user groups, and further limit access via standard category privileges in NodeBB.
+
+_The role-based access control functionality was sponsored by [Outplayed](https://outplayed.com)._
+
 ## Screenshots
 
 ![OAuth2 Strategy Editing](./screenshots/configure.png)
