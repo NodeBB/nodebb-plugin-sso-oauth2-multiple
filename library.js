@@ -212,7 +212,7 @@ OAuth.deleteUserData = async (data) => {
 	const promises = [];
 	for (const [provider, id] of Object.entries(oAuthIds)) {
 		if (id) {
-			promises.push(db.deleteObjectField(`${provider}Id:uid`, id));
+			promises.push(db.deleteObjectField(`${provider}:uid`, id));
 		}
 	}
 
