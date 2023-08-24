@@ -52,7 +52,7 @@
 				</div>
 
 				<div class="mb-4">
-					<h5>Role to Group Associations</h5>
+					<h5 class="fw-bold tracking-tight settings-header">Role to Group Associations</h5>
 					<p>
 						If the OAuth2 provider sends back a <code>roles</code> property in the User Info endpoint,
 						the user can be assigned to a specific user group based on a configured association below.
