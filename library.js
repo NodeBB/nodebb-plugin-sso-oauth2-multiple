@@ -47,6 +47,15 @@ OAuth.listStrategies = async (full) => {
 	const names = await db.getSortedSetMembers('oauth2-multiple:strategies');
 	names.sort();
 
+	return await getStrategies(names, full);
+};
+
+OAuth.getStrategy = async (name) => {
+	const strategies = await getStrategies([name], true);
+	return strategies.length ? strategies[0] : null;
+};
+
+async function getStrategies(names, full) {
 	const strategies = await db.getObjects(names.map(name => `oauth2-multiple:strategies:${name}`), full ? undefined : ['enabled']);
 	strategies.forEach((strategy, idx) => {
 		strategy.name = names[idx];
@@ -55,7 +64,7 @@ OAuth.listStrategies = async (full) => {
 	});
 
 	return strategies;
-};
+}
 
 OAuth.loadStrategies = async (strategies) => {
 	const passportOAuth = require('passport-oauth').OAuth2Strategy;
@@ -127,14 +136,14 @@ OAuth.getUserProfile = function (name, userRoute, accessToken, done) {
 	// instead of the request headers, comment out the next line:
 	this._oauth2._useAuthorizationHeaderForGET = true;
 
-	this._oauth2.get(userRoute, accessToken, (err, body/* , res */) => {
+	this._oauth2.get(userRoute, accessToken, async (err, body/* , res */) => {
 		if (err) {
 			return done(err);
 		}
 
 		try {
 			const json = JSON.parse(body);
-			const profile = OAuth.parseUserReturn(json);
+			const profile = await OAuth.parseUserReturn(name, json);
 			profile.provider = name;
 			done(null, profile);
 		} catch (e) {
@@ -143,10 +152,13 @@ OAuth.getUserProfile = function (name, userRoute, accessToken, done) {
 	});
 };
 
-OAuth.parseUserReturn = ({
-	provider, id, sub, name, nickname, preferred_username, picture, email, /* , email_verified */
-}) => {
-	const profile = {
+OAuth.parseUserReturn = async (provider, profile) => {
+	const {
+		id, sub, name, nickname, preferred_username, picture,
+		email, /* , email_verified */
+	} = profile;
+	const { usernameViaEmail } = await OAuth.getStrategy(provider);
+	const normalized = {
 		provider,
 		id: id || sub,
 		displayName: nickname || preferred_username || name,
@@ -154,7 +166,11 @@ OAuth.parseUserReturn = ({
 		email,
 	};
 
-	return profile;
+	if (!normalized.displayName && email && usernameViaEmail === 'on') {
+		normalized.displayName = email.split('@')[0];
+	}
+
+	return normalized;
 };
 
 OAuth.login = async (payload) => {

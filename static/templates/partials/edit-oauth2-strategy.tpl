@@ -91,4 +91,18 @@
 			</fieldset>
 		</div>
 	</div>
+	<div class="row border-top mt-3 pt-3">
+		<div class="col-12">
+			<h6>Adjustments</h6>
+			<p class="form-text">
+				Occasionally, some providers may have slightly different implementations that require adjustments on this end.
+				We offer some common adjustments below.
+			</p>
+
+			<div class="form-check form-switch">
+				<input type="checkbox" class="form-check-input" id="usernameViaEmail" name="usernameViaEmail" {{{ if (./usernameViaEmail == "on") }}}checked{{{ end }}}>
+				<label for="usernameViaEmail" class="form-check-label">Fall back to email as username if no username available (e.g. <code><strong>username</strong>@example.org</code>)</label>
+			</div>
+		</div>
+	</div>
 </form>
