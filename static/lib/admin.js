@@ -7,16 +7,10 @@ import { alert as bootboxAlert, confirm } from 'bootbox';
 import { get, post, del } from 'api';
 import { alert, error } from 'alerts';
 import { render } from 'benchpress';
+import { save, load } from 'settings';
 
 // eslint-disable-next-line import/prefer-default-export
 export function init() {
-	// settings.load('sso-oauth2-multiple', $('.sso-oauth2-multiple-settings'));
-	// $('#save').on('click', saveSettings);
-	const saveEl = document.getElementById('save');
-	if (saveEl) {
-		saveEl.classList.toggle('d-none', true);
-	}
-
 	const formEl = document.querySelector('.sso-oauth2-multiple-settings');
 	formEl.addEventListener('click', async (e) => {
 		const subselector = e.target.closest('[data-action]');
@@ -84,6 +78,61 @@ export function init() {
 				}
 			}
 		}
+	});
+
+	handleSettingsForm();
+	handleAssociations();
+}
+
+function handleSettingsForm() {
+	load('sso-oauth2-multiple', $('.sso-oauth2-multiple-settings'), () => {
+		const fieldset = document.getElementById('associations');
+		const selectEls = fieldset.querySelectorAll('select[data-value]');
+		if (selectEls.length) {
+			selectEls.forEach((el) => {
+				const value = el.getAttribute('data-value');
+				const optionEl = el.querySelector(`option[value="${value}"]`);
+				optionEl.selected = true;
+			});
+		}
+
+		// settings.load shoves all the values into the first association input, so
+		// the roles all start out disabled so that they don't get overridden
+		const domainEls = fieldset.querySelectorAll('input[disabled]');
+		domainEls.forEach((el) => {
+			el.disabled = false;
+		});
+	});
+
+	$('#save').on('click', () => {
+		save('sso-oauth2-multiple', $('.sso-oauth2-multiple-settings')); // pass in a function in the 3rd parameter to override the default success/failure handler
+	});
+}
+
+function handleAssociations() {
+	const addEl = document.querySelector('[data-action="add"]');
+	const fieldset = document.getElementById('associations');
+	console.log(addEl, fieldset);
+	if (!addEl || !fieldset) {
+		return;
+	}
+
+	addEl.addEventListener('click', async () => {
+		let html = await render('partials/group-association-field', {
+			groupNames: ajaxify.data.groupNames,
+		});
+		html = new DOMParser().parseFromString(html, 'text/html').body.childNodes;
+		fieldset.append(...html);
+	});
+
+	fieldset.addEventListener('click', (e) => {
+		const subselector = e.target.closest('[data-action="remove"]');
+		if (!subselector) {
+			return;
+		}
+
+		const row = subselector.closest('.association');
+		row.remove();
 	});
 }
 

@@ -50,6 +50,22 @@
 						</tfoot>
 					</table>
 				</div>
+
+				<div class="mb-4">
+					<h5>Role to Group Associations</h5>
+					<p>
+						If the OAuth2 provider sends back a <code>roles</code> property in the User Info endpoint,
+						the user can be assigned to a specific user group based on a configured association below.
+					</p>
+
+					<fieldset id="associations">
+						{{{ each associations }}}
+						<!-- IMPORT partials/group-association-field.tpl -->
+						{{{ end }}}
+					</fieldset>
+
+					<button type="button" class="btn btn-primary" data-action="add">Add association</button>
+				</div>
 			</form>
 		</div>
 

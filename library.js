@@ -7,6 +7,8 @@ const winston = module.parent.require('winston');
 const db = require.main.require('./src/database');
 const user = require.main.require('./src/user');
 const plugins = require.main.require('./src/plugins');
+const meta = require.main.require('./src/meta');
+const groups = require.main.require('./src/groups');
 const authenticationController = require.main.require('./src/controllers/authentication');
 const routeHelpers = require.main.require('./src/routes/helpers');
 
@@ -101,6 +103,7 @@ OAuth.loadStrategies = async (strategies) => {
 
 		winston.verbose(`[plugin/sso-oauth2-multiple] Successful login to uid ${user.uid} via ${name} (remote id ${id})`);
 		authenticationController.onSuccessfulLogin(req, user.uid);
+		OAuth.assignGroups({ provider: name, user, profile });
 		done(null, user);
 
 		plugins.hooks.fire('action:oauth2.login', { name, user, profile });
@@ -155,7 +158,7 @@ OAuth.getUserProfile = function (name, userRoute, accessToken, done) {
 OAuth.parseUserReturn = async (provider, profile) => {
 	const {
 		id, sub, name, nickname, preferred_username, picture,
-		email, /* , email_verified */
+		roles, email, /* , email_verified */
 	} = profile;
 	const { usernameViaEmail, idKey } = await OAuth.getStrategy(provider);
 	const normalized = {
@@ -163,6 +166,7 @@ OAuth.parseUserReturn = async (provider, profile) => {
 		id: profile[idKey] || id || sub,
 		displayName: nickname || preferred_username || name,
 		picture,
+		roles,
 		email,
 	};
 
@@ -171,6 +175,19 @@ OAuth.parseUserReturn = async (provider, profile) => {
 	}
 
 	return normalized;
+};
+
+OAuth.getAssociations = async () => {
+	let { roles, groups } = await meta.settings.get('sso-oauth2-multiple');
+	if (!roles || !groups) {
+		return [];
+	}
+
+	groups = groups.split(',');
+	return roles.split(',').map((role, idx) => ({
+		role,
+		group: groups[idx],
+	}));
 };
 
 OAuth.login = async (payload) => {
@@ -200,6 +217,30 @@ OAuth.login = async (payload) => {
 	await db.setObjectField(`${payload.name}Id:uid`, payload.oAuthid, uid);
 
 	return { uid };
+};
+
+OAuth.assignGroups = async ({ user, profile }) => {
+	if (!profile.roles || !Array.isArray(profile.roles)) {
+		return;
+	}
+
+	const { uid } = user;
+	const associations = await OAuth.getAssociations();
+	const { toJoin, toLeave } = associations.reduce((memo, { role, group }) => {
+		if (profile.roles.includes(role)) {
+			memo.toJoin.push(group);
+		} else {
+			memo.toLeave.push(group);
+		}
+
+		return memo;
+	}, { toJoin: [], toLeave: [] });
+	if (toLeave.length) {
+		winston.verbose(`[plugins/sso-auth0] uid ${uid} now leaving ${toLeave.length} these user groups: ${toLeave.join(', ')}`);
+	}
+	await groups.leave(toLeave, uid);
+	await groups.join(toJoin, uid);
+	winston.verbose(`[plugins/sso-auth0] uid ${uid} now a part of ${toJoin.length} these user groups: ${toJoin.join(', ')}`);
 };
 
 OAuth.getUidByOAuthid = async (name, oAuthid) => db.getObjectField(`${name}Id:uid`, oAuthid);
