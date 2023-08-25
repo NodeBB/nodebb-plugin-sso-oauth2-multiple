@@ -185,8 +185,13 @@ OAuth.getAssociations = async () => {
 		return [];
 	}
 
-	groups = groups.split(',');
-	return roles.split(',').map((role, idx) => ({
+	if (!Array.isArray(groups)) {
+		groups = groups.split(',');
+	}
+	if (!Array.isArray(roles)) {
+		roles = roles.split(',');
+	}
+	return roles.map((role, idx) => ({
 		role,
 		group: groups[idx],
 	}));
