@@ -2,7 +2,7 @@
 	<div class="row">
 		<div class="col-sm-6">
 			<div class="form-check form-switch">
-				<input type="checkbox" class="form-check-input" id="enabled" name="enabled" {{{ if (./enabled == "true") }}}checked{{{ end }}}>
+				<input type="checkbox" class="form-check-input" id="enabled" name="enabled" {{{ if ./enabled }}}checked{{{ end }}}>
 				<label for="enabled" class="form-check-label">Enabled</label>
 			</div>
 
