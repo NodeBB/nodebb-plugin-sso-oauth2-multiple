@@ -112,13 +112,12 @@ function handleSettingsForm() {
 function handleAssociations() {
 	const addEl = document.querySelector('[data-action="add"]');
 	const fieldset = document.getElementById('associations');
-	console.log(addEl, fieldset);
 	if (!addEl || !fieldset) {
 		return;
 	}
 
 	addEl.addEventListener('click', async () => {
-		let html = await render('partials/group-association-field', {
+		let html = await render(`partials/group-association-field${ajaxify.data.isV2 ? '-v2' : ''}`, {
 			groupNames: ajaxify.data.groupNames,
 		});
 		html = new DOMParser().parseFromString(html, 'text/html').body.childNodes;
