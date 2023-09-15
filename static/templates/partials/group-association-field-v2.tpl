@@ -1,6 +1,6 @@
 <div class="mb-3 association">
 	<div class="input-group">
-		<input type="text" name="roles" class="form-control" placeholder="Role" value="{./role}" {{{ if ./role }}}disabled{{{ end }}}>
+		<input type="text" name="roles" class="form-control" placeholder="Role" value="{./role}" autocomplete="off" {{{ if ./role }}}disabled{{{ end }}}>
 		<span class="input-group-addon">&rarr;</span>
 		<select class="form-control" name="groups" data-value="{./group}">
 			{{{ each groupNames }}}
