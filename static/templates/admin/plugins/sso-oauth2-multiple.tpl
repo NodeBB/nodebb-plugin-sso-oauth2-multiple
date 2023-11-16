@@ -32,7 +32,7 @@
 								<td>
 									{{{ if ./enabled }}}&check;{{{ else }}}&cross;{{{ end }}}
 								</td>
-								<td>{./callbackUrl}</td>
+								<td class="text-break">{./callbackUrl}</td>
 								<td class="text-end">
 									<a href="#" data-action="edit">Edit</a>
 									&nbsp;&nbsp;&nbsp;
