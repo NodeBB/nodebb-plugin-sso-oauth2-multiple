@@ -107,11 +107,15 @@
 				<div class="row">
 					<div class="col-sm-6">
 						<div class="form-check form-switch mb-3">
-							<input type="checkbox" class="form-check-input" id="usernameViaEmail" name="usernameViaEmail" {{{ if (./usernameViaEmail == "on") }}}checked{{{ end }}}>
-							<label for="usernameViaEmail" class="form-check-label">Fall back to email as username if no username available (e.g. <code><strong>username</strong>@example.org</code>)</label>
+							<input type="checkbox" class="form-check-input" id="usernameViaEmail" name="usernameViaEmail" {{{ if (./usernameViaEmail == "1") }}}checked{{{ end }}}>
+							<label for="usernameViaEmail" class="form-check-label">Fall back to email as username if no username available (e.g. <code><strong>username</strong>@example.org</code>).</label>
 						</div>
-					</div>
-					<div class="col-sm-6">
+
+						<div class="form-check form-switch mb-3">
+							<input type="checkbox" class="form-check-input" id="trustEmailVerified" name="trustEmailVerified" {{{ if (./trustEmailVerified == "1") }}}checked{{{ end }}}>
+							<label for="trustEmailVerified" class="form-check-label">Automatically confirm emails when <code>email_verified</code> is true.</code></label>
+						</div>
+
 						<div class="mb-3">
 							<label class="form-label" for="idKey">Alternative <code>id</code> key</label>
 							<input type="text" id="idKey" name="idKey" title="Alternative id key" class="form-control" placeholder="e.g. auth0Id" value="{./idKey}">
@@ -120,6 +124,18 @@
 								In case you wish to use an alternative key returned in the User Info URL as the key, enter it here.
 								If that field is empty or missing, then we will fall back to the defaults.
 							</p>
+						</div>
+					</div>
+					<div class="col-sm-6">
+						<label class="form-label mb-2">Synchronize profile data</label>
+						<div class="form-check form-switch mb-3">
+							<input type="checkbox" class="form-check-input" id="syncFullname" name="syncFullname" {{{ if (./syncFullname == "1") }}}checked{{{ end }}}>
+							<label for="syncFullname" class="form-check-label">Full Name</label>
+						</div>
+
+						<div class="form-check form-switch mb-3">
+							<input type="checkbox" class="form-check-input" id="syncPicture" name="syncPicture" {{{ if (./syncPicture == "1") }}}checked{{{ end }}}>
+							<label for="syncPicture" class="form-check-label">Picture</label>
 						</div>
 					</div>
 				</div>

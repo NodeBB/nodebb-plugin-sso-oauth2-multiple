@@ -89,7 +89,7 @@ OAuth.loadStrategies = async (strategies) => {
 		callbackURL,
 		passReqToCallback: true,
 	}, async (req, token, secret, profile, done) => {
-		const { id, displayName, email } = profile;
+		const { id, displayName, email, email_verified } = profile;
 		if (![id, displayName, email].every(Boolean)) {
 			return done(new Error('insufficient-scope'));
 		}
@@ -99,10 +99,12 @@ OAuth.loadStrategies = async (strategies) => {
 				oAuthid: id,
 				handle: displayName,
 				email,
+				email_verified,
 			});
 			winston.verbose(`[plugin/sso-oauth2-multiple] Successful login to uid ${user.uid} via ${name} (remote id ${id})`);
 			await authenticationController.onSuccessfulLogin(req, user.uid);
 			await OAuth.assignGroups({ provider: name, user, profile });
+			await OAuth.updateProfile(user.uid, profile);
 			done(null, user);
 
 			plugins.hooks.fire('action:oauth2.login', { name, user, profile });
@@ -159,17 +161,27 @@ OAuth.getUserProfile = function (name, userRoute, accessToken, done) {
 
 OAuth.parseUserReturn = async (provider, profile) => {
 	const {
-		id, sub, name, nickname, preferred_username, picture,
-		roles, email, /* , email_verified */
+		id, sub,
+		name, nickname, preferred_username,
+		given_name, middle_name, family_name,
+		picture, roles, email, email_verified,
 	} = profile;
 	const { usernameViaEmail, idKey } = await OAuth.getStrategy(provider);
+
+	const displayName = nickname || preferred_username || name;
+
+	const combinedFullName = [given_name, middle_name, family_name].filter(Boolean).join(' ');
+	const fullname = name || combinedFullName;
+
 	const normalized = {
 		provider,
 		id: profile[idKey] || id || sub,
-		displayName: nickname || preferred_username || name,
+		displayName,
+		fullname,
 		picture,
 		roles,
 		email,
+		email_verified,
 	};
 
 	if (!normalized.displayName && email && usernameViaEmail === 'on') {
@@ -204,19 +216,32 @@ OAuth.login = async (payload) => {
 		return ({ uid });
 	}
 
-	// Check for user via email fallback
-	uid = await user.getUidByEmail(payload.email);
-	if (!uid) {
-		const { email } = payload;
+	const { trustEmailVerified } = await OAuth.getStrategy(payload.name);
+	const { email } = payload;
+	const email_verified =
+		parseInt(trustEmailVerified, 10) &&
+		(payload.email_verified || payload.email_verified === undefined);
 
+
+	// Check for user via email fallback
+	if (email && email_verified) {
+		uid = await user.getUidByEmail(payload.email);
+	}
+
+	if (!uid) {
 		// New user
 		uid = await user.create({
 			username: payload.handle,
 		});
 
 		// Automatically confirm user email
-		await user.setUserField(uid, 'email', email);
-		await user.email.confirmByUid(uid);
+		if (email) {
+			await user.setUserField(uid, 'email', email);
+
+			if (email_verified) {
+				await user.email.confirmByUid(uid);
+			}
+		}
 	}
 
 	// Save provider-specific information to the user
@@ -248,6 +273,27 @@ OAuth.assignGroups = async ({ user, profile }) => {
 	await groups.leave(toLeave, uid);
 	await groups.join(toJoin, uid);
 	winston.verbose(`[plugins/sso-auth0] uid ${uid} now a part of ${toJoin.length} these user groups: ${toJoin.join(', ')}`);
+};
+
+OAuth.updateProfile = async (uid, profile) => {
+	const fields = ['fullname', 'picture'];
+	const strategy = await OAuth.getStrategy(profile.provider);
+	const allowList = [];
+
+	const payload = fields.reduce((memo, field) => {
+		const setting = `sync${field[0].toUpperCase()}${field.slice(1)}`;
+		if (strategy[setting] && parseInt(strategy[setting], 10)) {
+			memo[field] = profile[field];
+			if (field === 'picture') {
+				allowList.push('picture');
+			}
+		}
+
+		return memo;
+	}, {});
+	payload.uid = uid;
+
+	await user.updateProfile(uid, payload, allowList);
 };
 
 OAuth.getUidByOAuthid = async (name, oAuthid) => db.getObjectField(`${name}Id:uid`, oAuthid);
