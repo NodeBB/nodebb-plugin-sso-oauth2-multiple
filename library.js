@@ -166,7 +166,7 @@ OAuth.parseUserReturn = async (provider, profile) => {
 		given_name, middle_name, family_name,
 		picture, roles, email, email_verified,
 	} = profile;
-	const { usernameViaEmail, idKey } = await OAuth.getStrategy(provider);
+	const { usernameViaEmail, forceUsernameViaEmail, idKey } = await OAuth.getStrategy(provider);
 
 	const displayName = nickname || preferred_username || name;
 
@@ -184,7 +184,7 @@ OAuth.parseUserReturn = async (provider, profile) => {
 		email_verified,
 	};
 
-	if (!normalized.displayName && email && usernameViaEmail === 'on') {
+	if (forceUsernameViaEmail || (!normalized.displayName && email && usernameViaEmail === 'on')) {
 		normalized.displayName = email.split('@')[0];
 	}
 

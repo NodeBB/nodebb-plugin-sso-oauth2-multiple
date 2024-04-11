@@ -112,6 +112,11 @@
 						</div>
 
 						<div class="form-check form-switch mb-3">
+							<input type="checkbox" class="form-check-input" id="forceUsernameViaEmail" name="forceUsernameViaEmail" {{{ if (./forceUsernameViaEmail == "1") }}}checked{{{ end }}}>
+							<label for="forceUsernameViaEmail" class="form-check-label">Use email as username <span class="form-text text-danger">(supercedes previous option).</span></label>
+						</div>
+
+						<div class="form-check form-switch mb-3">
 							<input type="checkbox" class="form-check-input" id="trustEmailVerified" name="trustEmailVerified" {{{ if (./trustEmailVerified == "1") }}}checked{{{ end }}}>
 							<label for="trustEmailVerified" class="form-check-label">Automatically confirm emails when <code>email_verified</code> is true.</code></label>
 						</div>
