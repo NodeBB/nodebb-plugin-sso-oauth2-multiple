@@ -220,7 +220,7 @@ OAuth.login = async (payload) => {
 	const { email } = payload;
 	const email_verified =
 		parseInt(trustEmailVerified, 10) &&
-		(payload.email_verified || payload.email_verified === undefined);
+		(payload.email_verified || payload.email_verified === true);
 
 
 	// Check for user via email fallback
