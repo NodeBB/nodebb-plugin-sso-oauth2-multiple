@@ -33,6 +33,8 @@ OAuth.addRoutes = async ({ router, middleware }) => {
 	routeHelpers.setupApiRoute(router, 'post', '/oauth2-multiple/strategies', middlewares, controllers.editStrategy);
 	routeHelpers.setupApiRoute(router, 'get', '/oauth2-multiple/strategies/:name', middlewares, controllers.getStrategy);
 	routeHelpers.setupApiRoute(router, 'delete', '/oauth2-multiple/strategies/:name', middlewares, controllers.deleteStrategy);
+
+	routeHelpers.setupApiRoute(router, 'get', '/oauth2-multiple/provider/:provider/user/:oAuthId', middlewares, controllers.userByOAuthId);
 };
 
 OAuth.addAdminNavigation = (header) => {
