@@ -33,9 +33,15 @@ _The role-based access control functionality was sponsored by [Outplayed](https:
 
 ## For Developers
 
+### Hooks
 Other plugins can interact with this plugin, as it fires the following hooks:
 
 1. On successful login — `action:oauth2.login` — passes in `(name, user, profile)`
 	* `name` is the strategy name.
 	* `user` is the local NodeBB user (probably just the `uid`).
 	* `profile` is the remote profile as retrieved by this plugin.
+
+### API
+If you need to look up the user from your own system, you can use the GET api route `/api/v3/plugins/oauth2-multiple/provider/:provider/user/:oAuthId`.
+* `:provider` must be the name of you OAuth2 strategy
+* `:oAuthId` must be the same value that the userinfo endpoint returns for the defined user id
