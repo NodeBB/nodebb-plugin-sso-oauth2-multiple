@@ -37,7 +37,7 @@
     "compatibility": "^3.3.0"
   },
   "devDependencies": {
-    "@commitlint/config-angular": "17.6.7",
+    "@commitlint/config-angular": "19.6.0",
     "eslint-config-airbnb-base": "15.0.0",
     "eslint-config-nodebb": "0.2.1",
     "eslint-plugin-import": "2.x",
