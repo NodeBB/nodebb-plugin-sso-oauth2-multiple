@@ -303,7 +303,11 @@ OAuth.getUidByOAuthid = async (name, oAuthid) => db.getObjectField(`${name}Id:ui
 OAuth.deleteUserData = async (data) => {
 	const names = await db.getSortedSetMembers('oauth2-multiple:strategies');
 	const oAuthIds = await user.getUserFields(data.uid, names.map(name => `${name}Id`));
-	delete oAuthIds.uid;
+	Object.keys(oAuthIds).forEach((prop) => {
+		if (!names.includes(prop.replace(/Id$/, ''))) {
+			delete oAuthIds[prop];
+		}
+	});
 
 	const promises = [];
 	for (const [provider, id] of Object.entries(oAuthIds)) {
