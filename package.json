@@ -7,6 +7,9 @@
     "type": "git",
     "url": "https://github.com/NodeBB/nodebb-plugin-sso-oauth2-multiple"
   },
+  "scripts": {
+    "lint": "eslint ."
+  },
   "keywords": [
     "nodebb",
     "plugin",
@@ -29,18 +32,15 @@
   "readmeFilename": "README.md",
   "dependencies": {
     "async": "^3.2.0",
-    "eslint": "9.x",
     "node-fetch": "^2",
     "passport-oauth": "~1.0.0"
   },
   "nbbpm": {
-    "compatibility": "^3.3.0"
+    "compatibility": "^3.3.0 || ^4.x"
   },
   "devDependencies": {
     "@commitlint/config-angular": "17.6.7",
-    "eslint-config-airbnb-base": "15.0.0",
     "eslint-config-nodebb": "1.1.5",
-    "eslint-plugin-import": "2.x",
     "husky": "9.1.7",
     "lint-staged": "16.1.0"
   },

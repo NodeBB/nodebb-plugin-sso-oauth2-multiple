@@ -1,5 +1,3 @@
-/* eslint-disable import/no-unresolved */
-
 'use strict';
 
 // import * as settings from 'settings';
@@ -9,7 +7,6 @@ import { alert, error } from 'alerts';
 import { render } from 'benchpress';
 import { save, load } from 'settings';
 
-// eslint-disable-next-line import/prefer-default-export
 export function init() {
 	const formEl = document.querySelector('.sso-oauth2-multiple-settings');
 	formEl.addEventListener('click', async (e) => {
@@ -224,5 +221,5 @@ function handleDeleteStrategy(ok, name) {
 }
 
 // function saveSettings() {
-// 	settings.save('sso-oauth2-multiple', $('.sso-oauth2-multiple-settings'));
+// settings.save('sso-oauth2-multiple', $('.sso-oauth2-multiple-settings'));
 // }
