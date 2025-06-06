@@ -95,10 +95,10 @@ environment@^1.0.0:
   resolved "https://registry.npmjs.org/environment/-/environment-1.1.0.tgz"
   integrity sha512-xUtoPkMggbz0MPyPiIWr1Kp4aeWJjDZ6SMvURhimjdZgsRuDplF5/s9hcgGhyXMhs+6vpnuoiZ2kFiu3FMnS8Q==
 
-eslint-config-nodebb@1.1.6:
-  version "1.1.6"
-  resolved "https://registry.npmjs.org/eslint-config-nodebb/-/eslint-config-nodebb-1.1.6.tgz"
-  integrity sha512-Ak3IMAKkKe2Bi8xXIasTo+qjtF6IcUsrdNMdnyEFuJfscxykVmQcyhLL5J0mlE6mnk/5GEGBAEaRbaStKsNFxQ==
+eslint-config-nodebb@1.1.7:
+  version "1.1.7"
+  resolved "https://registry.npmjs.org/eslint-config-nodebb/-/eslint-config-nodebb-1.1.7.tgz"
+  integrity sha512-sdxh4+z0cvzjjpPoubkwl/1+ampG6OERs6vkuM8GzYWkXGBc2vnlBzw4bMpw6Nx6ACe3JBOP3MiVLOBzIGnlMw==
 
 eventemitter3@^5.0.1:
   version "5.0.1"
