@@ -10,6 +10,7 @@
 		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
 		{ "hook": "static:user.delete", "method": "deleteUserData" },
 		{ "hook": "filter:user.whitelistFields", "method": "whitelistFields" },
+		{ "hook": "filter:user.updateProfile", "method": "updateProfile" },
 		{ "hook": "filter:auth.init", "method": "loadStrategies" }
 	],
 	"modules": {
