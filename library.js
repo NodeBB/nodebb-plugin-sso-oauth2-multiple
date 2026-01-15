@@ -19,6 +19,7 @@ OAuth.init = async (params) => {
 	const controllers = require('./lib/controllers');
 
 	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/sso-oauth2-multiple', controllers.renderAdminPage);
+	router.get('/plugins/sso-oauth2-multiple/icons.css', controllers.renderIconsCss);
 };
 
 OAuth.addRoutes = async ({ router, middleware }) => {
