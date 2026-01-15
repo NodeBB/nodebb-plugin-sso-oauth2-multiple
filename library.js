@@ -19,6 +19,7 @@ OAuth.init = async (params) => {
 	const controllers = require('./lib/controllers');
 
 	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/sso-oauth2-multiple', controllers.renderAdminPage);
+	router.get('/plugins/sso-oauth2-multiple/icons.css', controllers.renderIconsCss);
 };
 
 OAuth.addRoutes = async ({ router, middleware }) => {
@@ -120,22 +121,35 @@ OAuth.loadStrategies = async (strategies) => {
 		passport.use(configured[idx].name, strategy);
 	});
 
-	strategies.push(...configured.map(({ name, scope, loginLabel, registerLabel, faIcon }) => ({
+	strategies.push(...configured.map(({
 		name,
-		url: `/auth/${name}`,
-		callbackURL: `/auth/${name}/callback`,
-		icon: faIcon || 'fa-right-to-bracket',
-		icons: {
-			normal: `fa ${faIcon || 'fa-right-to-bracket'}`,
-			square: `fa ${faIcon || 'fa-right-to-bracket'}`,
-		},
-		labels: {
-			login: loginLabel || 'Log In',
-			register: registerLabel || 'Register',
-		},
-		color: '#666',
-		scope: scope || 'openid email profile',
-	})));
+		scope,
+		loginLabel,
+		registerLabel,
+		faIcon,
+		iconUrl,
+	}) => {
+		const hasCustomIcon = Boolean(iconUrl);
+		const fallbackIcon = faIcon || 'fa-right-to-bracket';
+		const iconClass = hasCustomIcon ? `sso-oauth2-icon sso-oauth2-icon-${name}` : `fa ${fallbackIcon}`;
+
+		return {
+			name,
+			url: `/auth/${name}`,
+			callbackURL: `/auth/${name}/callback`,
+			icon: hasCustomIcon ? `sso-oauth2-icon sso-oauth2-icon-${name}` : fallbackIcon,
+			icons: {
+				normal: iconClass,
+				square: iconClass,
+			},
+			labels: {
+				login: loginLabel || 'Log In',
+				register: registerLabel || 'Register',
+			},
+			color: '#666',
+			scope: scope || 'openid email profile',
+		};
+	}));
 
 	return strategies;
 };

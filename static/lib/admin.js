@@ -23,7 +23,10 @@ export function init() {
 						message,
 						size: 'xl',
 						callback: handleEditStrategy,
-						onShown: handleAutoDiscovery,
+						onShown: function () {
+							handleAutoDiscovery.call(this);
+							handleIconUpload.call(this);
+						},
 					});
 
 					break;
@@ -39,7 +42,10 @@ export function init() {
 						message,
 						size: 'xl',
 						callback: handleEditStrategy,
-						onShown: handleAutoDiscovery,
+						onShown: function () {
+							handleAutoDiscovery.call(this);
+							handleIconUpload.call(this);
+						},
 					});
 
 					break;
@@ -203,6 +209,80 @@ function handleAutoDiscovery() {
 			idEl.focus();
 		}
 	});
+}
+
+function handleIconUpload() {
+	const modalEl = this;
+	const fileEl = modalEl.querySelector('#iconFile');
+	const iconUrlEl = modalEl.querySelector('input[name="iconUrl"]');
+	const previewEl = modalEl.querySelector('#iconPreview');
+	const removeEl = modalEl.querySelector('#removeIcon');
+
+	if (!fileEl || !iconUrlEl) {
+		return;
+	}
+
+	const updatePreview = (url) => {
+		if (!previewEl) {
+			return;
+		}
+		if (url) {
+			previewEl.src = url;
+			previewEl.classList.remove('d-none');
+		} else {
+			previewEl.removeAttribute('src');
+			previewEl.classList.add('d-none');
+		}
+	};
+
+	updatePreview(iconUrlEl.value);
+
+	fileEl.addEventListener('change', () => {
+		const file = fileEl.files && fileEl.files[0];
+		if (!file) {
+			return;
+		}
+
+		if (!file.type.startsWith('image/')) {
+			alert({
+				type: 'danger',
+				message: 'Icon upload must be an image file.',
+			});
+			fileEl.value = '';
+			return;
+		}
+
+		const maxBytes = 100 * 1024;
+		if (file.size > maxBytes) {
+			alert({
+				type: 'danger',
+				message: 'Icon upload must be 100KB or smaller.',
+			});
+			fileEl.value = '';
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = () => {
+			iconUrlEl.value = reader.result;
+			if (removeEl) {
+				removeEl.checked = false;
+			}
+			updatePreview(reader.result);
+		};
+		reader.readAsDataURL(file);
+	});
+
+	if (removeEl) {
+		removeEl.addEventListener('change', () => {
+			if (!removeEl.checked) {
+				return;
+			}
+			fileEl.value = '';
+			iconUrlEl.value = '';
+			updatePreview('');
+		});
+	}
 }
 
 function handleDeleteStrategy(ok, name) {
