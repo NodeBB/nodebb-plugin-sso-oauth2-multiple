@@ -15,6 +15,9 @@
 	"modules": {
 		"../admin/plugins/sso-oauth2-multiple.js": "./static/lib/admin.js"
 	},
+	"scripts": [
+		"static/lib/client.js"
+	],
 	"acpScripts": [
 		"static/lib/acp.js"
 	],
