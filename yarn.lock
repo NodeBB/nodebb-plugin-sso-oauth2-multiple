@@ -384,6 +384,11 @@ hookified@^2.1.1:
   resolved "https://registry.npmjs.org/hookified/-/hookified-2.2.0.tgz"
   integrity sha512-p/LgFzRN5FeoD3DLS6bkUapeye6E4SI6yJs6KetENd18S+FBthqYq2amJUWpt5z0EQwwHemidjY5OqJGEKm5uA==
 
+globals@17.3.0:
+  version "17.3.0"
+  resolved "https://registry.npmjs.org/globals/-/globals-17.3.0.tgz"
+  integrity sha512-yMqGUQVVCkD4tqjOJf3TnrvaaHDMYp4VlUSObbkIiuCPe/ofdMBFIAcBbCSRFWOnos6qRiTVStDwqPLUclaxIw==
+
 husky@9.1.7:
   version "9.1.7"
   resolved "https://registry.npmjs.org/husky/-/husky-9.1.7.tgz"
