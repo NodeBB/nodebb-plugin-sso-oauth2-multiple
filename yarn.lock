@@ -83,10 +83,12 @@ environment@^1.0.0:
   resolved "https://registry.npmjs.org/environment/-/environment-1.1.0.tgz"
   integrity sha512-xUtoPkMggbz0MPyPiIWr1Kp4aeWJjDZ6SMvURhimjdZgsRuDplF5/s9hcgGhyXMhs+6vpnuoiZ2kFiu3FMnS8Q==
 
-eslint-config-nodebb@1.1.11:
-  version "1.1.11"
-  resolved "https://registry.npmjs.org/eslint-config-nodebb/-/eslint-config-nodebb-1.1.11.tgz"
-  integrity sha512-UEAPQgOG0bof5gcnmw4KANVNdmkL63n4Xu3SvkVT0HgOfnlG0OfYtIaBiTXztvAktUr/pvV/BEpWGOJFfJvbKg==
+eslint-config-nodebb@2.0.1:
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/eslint-config-nodebb/-/eslint-config-nodebb-2.0.1.tgz"
+  integrity sha512-06QoLSEtjcUOstURvS4T2GyTFQOUdD/dCvJkrNi+CQ+9uJPpM41uZQAKJi94gv9OFTeLSdoqxESUXLbw2czqjw==
+  dependencies:
+    globals "17.3.0"
 
 eventemitter3@^5.0.1:
   version "5.0.1"
@@ -104,6 +106,11 @@ get-east-asian-width@^1.0.0, get-east-asian-width@^1.3.0, get-east-asian-width@^
   version "1.4.0"
   resolved "https://registry.npmjs.org/get-east-asian-width/-/get-east-asian-width-1.4.0.tgz"
   integrity sha512-QZjmEOC+IT1uk6Rx0sX22V6uHWVwbdbxf1faPqJ1QhLdGgsRGCZoyaQBm/piRdJy/D2um6hM1UP7ZEeQ4EkP+Q==
+
+globals@17.3.0:
+  version "17.3.0"
+  resolved "https://registry.npmjs.org/globals/-/globals-17.3.0.tgz"
+  integrity sha512-yMqGUQVVCkD4tqjOJf3TnrvaaHDMYp4VlUSObbkIiuCPe/ofdMBFIAcBbCSRFWOnos6qRiTVStDwqPLUclaxIw==
 
 husky@9.1.7:
   version "9.1.7"
