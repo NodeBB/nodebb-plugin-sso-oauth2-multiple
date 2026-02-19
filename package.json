@@ -39,7 +39,7 @@
     "compatibility": "^3.3.0 || ^4.x"
   },
   "devDependencies": {
-    "@commitlint/config-angular": "17.6.7",
+    "@commitlint/config-angular": "20.4.2",
     "eslint-config-nodebb": "2.0.1",
     "husky": "9.1.7",
     "lint-staged": "16.2.7"
