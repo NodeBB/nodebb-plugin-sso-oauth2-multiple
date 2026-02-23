@@ -39,7 +39,7 @@
 			<div class="mb-3">
 				<label class="form-label" for="iconFile">Custom Icon Upload</label>
 				<input type="hidden" name="iconUrl" value="{./iconUrl}">
-				<input type="file" id="iconFile" class="form-control" accept="image/*">
+				<input type="file" id="iconFile" name="iconFile" class="form-control" accept="image/*">
 				<p class="form-text">
 					<strong>Optional</strong> — upload a small image (PNG, SVG, etc.) to use instead of the FontAwesome icon.
 					Max size 100KB.

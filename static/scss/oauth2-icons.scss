@@ -1,0 +1,13 @@
+.sso-oauth2-icon {
+	display: inline-block;
+	width: 1em;
+	height: 1em;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: contain;
+	vertical-align: middle;
+
+	&::before {
+		content: "" !important;
+	}
+}

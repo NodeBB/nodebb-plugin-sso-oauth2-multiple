@@ -237,9 +237,10 @@ function handleIconUpload() {
 
 	updatePreview(iconUrlEl.value);
 
-	fileEl.addEventListener('change', () => {
+	fileEl.addEventListener('change', async () => {
 		const file = fileEl.files && fileEl.files[0];
 		if (!file) {
+			updatePreview(iconUrlEl.value);
 			return;
 		}
 
@@ -262,13 +263,34 @@ function handleIconUpload() {
 			return;
 		}
 
+		if (removeEl) {
+			removeEl.checked = false;
+		}
+
 		const reader = new FileReader();
 		reader.onload = () => {
-			iconUrlEl.value = reader.result;
-			if (removeEl) {
-				removeEl.checked = false;
-			}
-			updatePreview(reader.result);
+			const dataUrl = reader.result;
+			post('/plugins/oauth2-multiple/upload-icon', { dataUrl }).then((data) => {
+				const url = (data.response && data.response.url) || data.url;
+				if (url) {
+					iconUrlEl.value = url;
+					updatePreview(url);
+				}
+				fileEl.value = '';
+			}).catch((err) => {
+				alert({
+					type: 'danger',
+					message: err.message || err.status?.message || 'Icon upload failed.',
+				});
+				fileEl.value = '';
+			});
+		};
+		reader.onerror = () => {
+			alert({
+				type: 'danger',
+				message: 'Failed to read file.',
+			});
+			fileEl.value = '';
 		};
 		reader.readAsDataURL(file);
 	});

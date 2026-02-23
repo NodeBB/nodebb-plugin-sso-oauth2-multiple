@@ -19,7 +19,6 @@ OAuth.init = async (params) => {
 	const controllers = require('./lib/controllers');
 
 	routeHelpers.setupAdminPageRoute(router, '/admin/plugins/sso-oauth2-multiple', controllers.renderAdminPage);
-	router.get('/plugins/sso-oauth2-multiple/icons.css', controllers.renderIconsCss);
 };
 
 OAuth.addRoutes = async ({ router, middleware }) => {
@@ -30,7 +29,7 @@ OAuth.addRoutes = async ({ router, middleware }) => {
 	];
 
 	routeHelpers.setupApiRoute(router, 'get', '/oauth2-multiple/discover', middlewares, controllers.getOpenIdMetadata);
-
+	routeHelpers.setupApiRoute(router, 'post', '/oauth2-multiple/upload-icon', middlewares, controllers.uploadIcon);
 	routeHelpers.setupApiRoute(router, 'post', '/oauth2-multiple/strategies', middlewares, controllers.editStrategy);
 	routeHelpers.setupApiRoute(router, 'get', '/oauth2-multiple/strategies/:name', middlewares, controllers.getStrategy);
 	routeHelpers.setupApiRoute(router, 'delete', '/oauth2-multiple/strategies/:name', middlewares, controllers.deleteStrategy);
@@ -63,12 +62,14 @@ OAuth.getStrategy = async (name) => {
 async function getStrategies(names, full) {
 	const strategies = await db.getObjects(names.map(name => `oauth2-multiple:strategies:${name}`), full ? undefined : ['enabled']);
 	strategies.forEach((strategy, idx) => {
+		if (!strategy) {
+			return;
+		}
 		strategy.name = names[idx];
 		strategy.enabled = strategy.enabled === 'true' || strategy.enabled === true;
 		strategy.callbackUrl = `${nconf.get('url')}/auth/${names[idx]}/callback`;
 	});
-
-	return strategies;
+	return strategies.filter(Boolean);
 }
 
 OAuth.loadStrategies = async (strategies) => {
@@ -131,16 +132,20 @@ OAuth.loadStrategies = async (strategies) => {
 	}) => {
 		const hasCustomIcon = Boolean(iconUrl);
 		const fallbackIcon = faIcon || 'fa-right-to-bracket';
-		const iconClass = hasCustomIcon ? `sso-oauth2-icon sso-oauth2-icon-${name}` : `fa ${fallbackIcon}`;
+		const iconClass = `fa ${fallbackIcon}`;
+		const escapedUrl = hasCustomIcon ? iconUrl.replace(/'/g, "\\'") : '';
 
 		return {
 			name,
 			url: `/auth/${name}`,
 			callbackURL: `/auth/${name}/callback`,
-			icon: hasCustomIcon ? `sso-oauth2-icon sso-oauth2-icon-${name}` : fallbackIcon,
+			icon: fallbackIcon,
 			icons: {
 				normal: iconClass,
 				square: iconClass,
+				...(hasCustomIcon && {
+					svg: `<i class="sso-oauth2-icon" style="background-image:url('${escapedUrl}');display:inline-block;width:1em;height:1em;background-size:contain;background-repeat:no-repeat;background-position:center;vertical-align:middle;"></i>`,
+				}),
 			},
 			labels: {
 				login: loginLabel || 'Log In',
