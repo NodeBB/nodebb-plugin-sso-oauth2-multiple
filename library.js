@@ -326,3 +326,26 @@ OAuth.whitelistFields = async (params) => {
 
 	return params;
 };
+
+// This allows setting up the ids via API
+OAuth.updateProfile = async (hookData) => {
+	const { data } = hookData;
+	if (data == null) {
+		return hookData;
+	}
+
+	const { uid } = data;
+	if (uid == null) {
+		return hookData;
+	}
+
+	const names = await db.getSortedSetMembers('oauth2-multiple:strategies');
+	for (const nameId of names.map(name => `${name}Id`)) {
+		if (typeof data[nameId] === 'number') {
+			winston.verbose(`[plugins/sso-auth0] uid ${uid} setting up ${nameId}=${data[nameId]}`);
+			await user.setUserField(uid, nameId, data[nameId]);
+			await db.setObjectField(`${nameId}:uid`, data[nameId], uid);
+		}
+	}
+	return hookData;
+};
