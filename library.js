@@ -106,14 +106,7 @@ OAuth.loadStrategies = async (strategies) => {
 				handle: displayName,
 				email,
 				email_verified,
-			}, req, profile);
-
-			if (user.pending) {
-				// createOrQueue has populated req.session.registration; NodeBB core
-				// will route to /register/complete. Finalisation runs from action:user.create.
-				winston.verbose(`[plugin/sso-oauth2-multiple] Deferring new user via ${name} (remote id ${id}) to username-picker interstitial`);
-				return done(null, { uid: 0 });
-			}
+			}, req);
 
 			winston.verbose(`[plugin/sso-oauth2-multiple] Successful login to uid ${user.uid} via ${name} (remote id ${id})`);
 			await authenticationController.onSuccessfulLogin(req, user.uid);
@@ -240,7 +233,7 @@ OAuth.getAssociations = async () => {
 	}));
 };
 
-OAuth.login = async (payload, req, profile) => {
+OAuth.login = async (payload, req) => {
 	let uid = await OAuth.getUidByOAuthid(payload.name, payload.oAuthid);
 	if (uid !== null) {
 		// Existing User
@@ -265,40 +258,35 @@ OAuth.login = async (payload, req, profile) => {
 		return { uid };
 	}
 
-	// Brand-new user -- hand off to NodeBB's interstitial pipeline when the
-	// strategy opts into user-chosen usernames.
-	if (parseInt(usernameChoice, 10) && req) {
-		const userData = {
-			username: payload.handle || (email ? email.split('@')[0] : ''),
-			email,
-			_oauth2Multiple: {
-				provider: payload.name,
-				oAuthid: payload.oAuthid,
-				email_verified: !!email_verified,
-				profile,
-			},
-		};
-		await user.createOrQueue(req, userData);
-		return { uid: 0, pending: true };
-	}
+	// Brand-new user. When usernameChoice is on, create with a unique placeholder
+	// and stage a session marker so middleware.registrationComplete routes the
+	// logged-in user through /register/complete, where our interstitial fires.
+	const pickerMode = Boolean(parseInt(usernameChoice, 10) && req);
+	const username = pickerMode ?
+		`oauth2-tmp-${payload.name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` :
+		payload.handle;
 
-	// Legacy path: create immediately using the provider-derived handle.
-	uid = await user.create({
-		username: payload.handle,
-	});
+	uid = await user.create({ username });
 
-	// Automatically confirm user email
 	if (email) {
 		await user.setUserField(uid, 'email', email);
-
 		if (email_verified) {
 			await user.email.confirmByUid(uid);
 		}
 	}
 
-	// Save provider-specific information to the user
 	await user.setUserField(uid, `${payload.name}Id`, payload.oAuthid);
 	await db.setObjectField(`${payload.name}Id:uid`, payload.oAuthid, uid);
+
+	if (pickerMode) {
+		req.session.registration = req.session.registration || {};
+		req.session.registration.uid = uid;
+		req.session.registration._oauth2MultipleRename = {
+			provider: payload.name,
+			suggestedBase: payload.handle || (email ? email.split('@')[0] : ''),
+			email: email || '',
+		};
+	}
 
 	return { uid };
 };
@@ -378,21 +366,20 @@ OAuth.whitelistFields = async (params) => {
 };
 
 OAuth.addInterstitial = async (data) => {
-	const { req, userData, interstitials } = data;
-	const marker = (userData && userData._oauth2Multiple) ||
-		(req && req.session && req.session.registration && req.session.registration._oauth2Multiple);
-	if (!marker) {
+	const { userData, interstitials } = data;
+	const marker = userData && userData._oauth2MultipleRename;
+	if (!marker || !userData.uid) {
 		return data;
 	}
 
-	const suggested = await OAuth.suggestAvailableUsername(userData.username, userData.email);
+	const suggested = await OAuth.suggestAvailableUsername(marker.suggestedBase, marker.email);
 
 	interstitials.push({
 		template: 'partials/oauth2-multiple/choose-username.tpl',
 		data: {
 			provider: marker.provider,
 			suggestedUsername: suggested,
-			email: userData.email || '',
+			email: marker.email || '',
 		},
 		callback: OAuth.onUsernameSubmit,
 	});
@@ -401,8 +388,8 @@ OAuth.addInterstitial = async (data) => {
 };
 
 OAuth.onUsernameSubmit = async (userData, formData) => {
-	const marker = userData && userData._oauth2Multiple;
-	if (!marker) {
+	const marker = userData && userData._oauth2MultipleRename;
+	if (!marker || !userData.uid) {
 		return userData;
 	}
 
@@ -416,42 +403,24 @@ OAuth.onUsernameSubmit = async (userData, formData) => {
 		throw new Error('[[error:invalid-username]]');
 	}
 
-	const [userExists, groupExists] = await Promise.all([
-		user.existsBySlug(slug),
+	const [existingUid, groupExists] = await Promise.all([
+		user.getUidByUserslug(slug),
 		groups.exists(chosen),
 	]);
-	if (userExists || groupExists) {
+	if ((existingUid && parseInt(existingUid, 10) !== parseInt(userData.uid, 10)) || groupExists) {
 		throw new Error('[[error:username-taken]]');
 	}
 
-	userData.username = chosen;
-	userData.userslug = slug;
-	return userData;
-};
+	await user.updateProfile(userData.uid, { uid: userData.uid, username: chosen }, ['username']);
 
-OAuth.onUserCreate = async ({ user: created, data: userData }) => {
-	const marker = userData && userData._oauth2Multiple;
-	if (!marker || !created || !created.uid) {
-		return;
-	}
-
-	try {
-		if (userData.email && marker.email_verified) {
-			await user.email.confirmByUid(created.uid);
+	// Strip marker + temp fields so registerComplete's setUserFields doesn't overwrite the rename.
+	delete userData._oauth2MultipleRename;
+	Object.keys(userData).forEach((key) => {
+		if (key !== 'uid' && key !== 'returnTo') {
+			delete userData[key];
 		}
-
-		await user.setUserField(created.uid, `${marker.provider}Id`, marker.oAuthid);
-		await db.setObjectField(`${marker.provider}Id:uid`, marker.oAuthid, created.uid);
-
-		const linkedUser = { uid: created.uid };
-		await OAuth.assignGroups({ provider: marker.provider, user: linkedUser, profile: marker.profile });
-		await OAuth.updateProfile(created.uid, marker.profile);
-
-		plugins.hooks.fire('action:oauth2.login', { name: marker.provider, user: linkedUser, profile: marker.profile });
-		winston.verbose(`[plugin/sso-oauth2-multiple] Completed deferred registration for uid ${created.uid} via ${marker.provider}`);
-	} catch (err) {
-		winston.error(`[plugin/sso-oauth2-multiple] Failed to finalise OAuth registration for uid ${created.uid}: ${err.stack}`);
-	}
+	});
+	return userData;
 };
 
 OAuth.suggestAvailableUsername = async (handle, email) => {
