@@ -133,6 +133,11 @@
 						</div>
 
 						<div class="form-check form-switch mb-3">
+							<input type="checkbox" class="form-check-input" id="usernameChoice" name="usernameChoice" {{{ if (./usernameChoice == "1") }}}checked{{{ end }}}>
+							<label for="usernameChoice" class="form-check-label">Let the user pick their own NodeBB username on first login <span class="form-text text-danger">(supersedes both options above).</span></label>
+						</div>
+
+						<div class="form-check form-switch mb-3">
 							<input type="checkbox" class="form-check-input" id="trustEmailVerified" name="trustEmailVerified" {{{ if (./trustEmailVerified == "1") }}}checked{{{ end }}}>
 							<label for="trustEmailVerified" class="form-check-label">Automatically confirm emails when <code>email_verified</code> is true.</code></label>
 						</div>

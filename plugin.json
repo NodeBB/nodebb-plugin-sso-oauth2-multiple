@@ -10,7 +10,9 @@
 		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
 		{ "hook": "static:user.delete", "method": "deleteUserData" },
 		{ "hook": "filter:user.whitelistFields", "method": "whitelistFields" },
-		{ "hook": "filter:auth.init", "method": "loadStrategies" }
+		{ "hook": "filter:auth.init", "method": "loadStrategies" },
+		{ "hook": "filter:register.interstitial", "method": "addInterstitial" },
+		{ "hook": "action:user.create", "method": "onUserCreate" }
 	],
 	"modules": {
 		"../admin/plugins/sso-oauth2-multiple.js": "./static/lib/admin.js"
@@ -21,5 +23,6 @@
 	"acpScripts": [
 		"static/lib/acp.js"
 	],
-	"templates": "static/templates"
+	"templates": "static/templates",
+	"languages": "static/languages"
 }

@@ -11,6 +11,8 @@ const meta = require.main.require('./src/meta');
 const groups = require.main.require('./src/groups');
 const authenticationController = require.main.require('./src/controllers/authentication');
 const routeHelpers = require.main.require('./src/routes/helpers');
+const slugify = require.main.require('./src/slugify');
+const utils = require.main.require('./public/src/utils');
 
 const OAuth = module.exports;
 
@@ -104,7 +106,15 @@ OAuth.loadStrategies = async (strategies) => {
 				handle: displayName,
 				email,
 				email_verified,
-			});
+			}, req, profile);
+
+			if (user.pending) {
+				// createOrQueue has populated req.session.registration; NodeBB core
+				// will route to /register/complete. Finalisation runs from action:user.create.
+				winston.verbose(`[plugin/sso-oauth2-multiple] Deferring new user via ${name} (remote id ${id}) to username-picker interstitial`);
+				return done(null, { uid: 0 });
+			}
+
 			winston.verbose(`[plugin/sso-oauth2-multiple] Successful login to uid ${user.uid} via ${name} (remote id ${id})`);
 			await authenticationController.onSuccessfulLogin(req, user.uid);
 			await OAuth.assignGroups({ provider: name, user, profile });
@@ -230,38 +240,59 @@ OAuth.getAssociations = async () => {
 	}));
 };
 
-OAuth.login = async (payload) => {
+OAuth.login = async (payload, req, profile) => {
 	let uid = await OAuth.getUidByOAuthid(payload.name, payload.oAuthid);
 	if (uid !== null) {
 		// Existing User
 		return ({ uid });
 	}
 
-	const { trustEmailVerified } = await OAuth.getStrategy(payload.name);
+	const { trustEmailVerified, usernameChoice } = await OAuth.getStrategy(payload.name);
 	const { email } = payload;
 	const email_verified =
 		parseInt(trustEmailVerified, 10) &&
 		(payload.email_verified || payload.email_verified === true);
 
 
-	// Check for user via email fallback
+	// Check for user via email fallback -- linking path, never shows the picker
 	if (email && email_verified) {
 		uid = await user.getUidByEmail(payload.email);
 	}
 
-	if (!uid) {
-		// New user
-		uid = await user.create({
-			username: payload.handle,
-		});
+	if (uid) {
+		await user.setUserField(uid, `${payload.name}Id`, payload.oAuthid);
+		await db.setObjectField(`${payload.name}Id:uid`, payload.oAuthid, uid);
+		return { uid };
+	}
 
-		// Automatically confirm user email
-		if (email) {
-			await user.setUserField(uid, 'email', email);
+	// Brand-new user -- hand off to NodeBB's interstitial pipeline when the
+	// strategy opts into user-chosen usernames.
+	if (parseInt(usernameChoice, 10) && req) {
+		const userData = {
+			username: payload.handle || (email ? email.split('@')[0] : ''),
+			email,
+			_oauth2Multiple: {
+				provider: payload.name,
+				oAuthid: payload.oAuthid,
+				email_verified: !!email_verified,
+				profile,
+			},
+		};
+		await user.createOrQueue(req, userData);
+		return { uid: 0, pending: true };
+	}
 
-			if (email_verified) {
-				await user.email.confirmByUid(uid);
-			}
+	// Legacy path: create immediately using the provider-derived handle.
+	uid = await user.create({
+		username: payload.handle,
+	});
+
+	// Automatically confirm user email
+	if (email) {
+		await user.setUserField(uid, 'email', email);
+
+		if (email_verified) {
+			await user.email.confirmByUid(uid);
 		}
 	}
 
@@ -344,4 +375,100 @@ OAuth.whitelistFields = async (params) => {
 	params.whitelist.push(...names.map(name => `${name}Id`));
 
 	return params;
+};
+
+OAuth.addInterstitial = async (data) => {
+	const { req, userData, interstitials } = data;
+	const marker = (userData && userData._oauth2Multiple) ||
+		(req && req.session && req.session.registration && req.session.registration._oauth2Multiple);
+	if (!marker) {
+		return data;
+	}
+
+	const suggested = await OAuth.suggestAvailableUsername(userData.username, userData.email);
+
+	interstitials.push({
+		template: 'partials/oauth2-multiple/choose-username.tpl',
+		data: {
+			provider: marker.provider,
+			suggestedUsername: suggested,
+			email: userData.email || '',
+		},
+		callback: OAuth.onUsernameSubmit,
+	});
+
+	return data;
+};
+
+OAuth.onUsernameSubmit = async (userData, formData) => {
+	const marker = userData && userData._oauth2Multiple;
+	if (!marker) {
+		return userData;
+	}
+
+	const chosen = (formData.username || '').trim();
+	if (!chosen || !utils.isUserNameValid(chosen)) {
+		throw new Error('[[error:invalid-username]]');
+	}
+
+	const slug = slugify(chosen);
+	if (!slug) {
+		throw new Error('[[error:invalid-username]]');
+	}
+
+	const [userExists, groupExists] = await Promise.all([
+		user.existsBySlug(slug),
+		groups.exists(chosen),
+	]);
+	if (userExists || groupExists) {
+		throw new Error('[[error:username-taken]]');
+	}
+
+	userData.username = chosen;
+	userData.userslug = slug;
+	return userData;
+};
+
+OAuth.onUserCreate = async ({ user: created, data: userData }) => {
+	const marker = userData && userData._oauth2Multiple;
+	if (!marker || !created || !created.uid) {
+		return;
+	}
+
+	try {
+		if (userData.email && marker.email_verified) {
+			await user.email.confirmByUid(created.uid);
+		}
+
+		await user.setUserField(created.uid, `${marker.provider}Id`, marker.oAuthid);
+		await db.setObjectField(`${marker.provider}Id:uid`, marker.oAuthid, created.uid);
+
+		const linkedUser = { uid: created.uid };
+		await OAuth.assignGroups({ provider: marker.provider, user: linkedUser, profile: marker.profile });
+		await OAuth.updateProfile(created.uid, marker.profile);
+
+		plugins.hooks.fire('action:oauth2.login', { name: marker.provider, user: linkedUser, profile: marker.profile });
+		winston.verbose(`[plugin/sso-oauth2-multiple] Completed deferred registration for uid ${created.uid} via ${marker.provider}`);
+	} catch (err) {
+		winston.error(`[plugin/sso-oauth2-multiple] Failed to finalise OAuth registration for uid ${created.uid}: ${err.stack}`);
+	}
+};
+
+OAuth.suggestAvailableUsername = async (handle, email) => {
+	const base = ((handle && handle.trim()) ||
+		(email && email.split('@')[0]) || 'user').trim();
+	const baseSlug = slugify(base);
+	if (baseSlug && !(await user.existsBySlug(baseSlug)) && !(await groups.exists(base))) {
+		return base;
+	}
+	for (let i = 1; i < 100; i += 1) {
+		const candidate = `${base}${i}`;
+		const slug = slugify(candidate);
+		/* eslint-disable no-await-in-loop */
+		if (slug && !(await user.existsBySlug(slug)) && !(await groups.exists(candidate))) {
+			return candidate;
+		}
+		/* eslint-enable no-await-in-loop */
+	}
+	return base;
 };
