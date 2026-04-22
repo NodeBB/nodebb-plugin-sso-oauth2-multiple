@@ -32,6 +32,7 @@
   "readmeFilename": "README.md",
   "dependencies": {
     "async": "^3.2.0",
+    "lint": "^1.1.2",
     "node-fetch": "^2",
     "passport-oauth": "~1.0.0"
   },
