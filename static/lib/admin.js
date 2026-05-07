@@ -23,7 +23,10 @@ export function init() {
 						message,
 						size: 'xl',
 						callback: handleEditStrategy,
-						onShown: handleAutoDiscovery,
+						onShown: function () {
+							handleAutoDiscovery.call(this);
+							handleIconUpload.call(this);
+						},
 					});
 
 					break;
@@ -39,7 +42,10 @@ export function init() {
 						message,
 						size: 'xl',
 						callback: handleEditStrategy,
-						onShown: handleAutoDiscovery,
+						onShown: function () {
+							handleAutoDiscovery.call(this);
+							handleIconUpload.call(this);
+						},
 					});
 
 					break;
@@ -203,6 +209,102 @@ function handleAutoDiscovery() {
 			idEl.focus();
 		}
 	});
+}
+
+function handleIconUpload() {
+	const modalEl = this;
+	const fileEl = modalEl.querySelector('#iconFile');
+	const iconUrlEl = modalEl.querySelector('input[name="iconUrl"]');
+	const previewEl = modalEl.querySelector('#iconPreview');
+	const removeEl = modalEl.querySelector('#removeIcon');
+
+	if (!fileEl || !iconUrlEl) {
+		return;
+	}
+
+	const updatePreview = (url) => {
+		if (!previewEl) {
+			return;
+		}
+		if (url) {
+			previewEl.src = url;
+			previewEl.classList.remove('d-none');
+		} else {
+			previewEl.removeAttribute('src');
+			previewEl.classList.add('d-none');
+		}
+	};
+
+	updatePreview(iconUrlEl.value);
+
+	fileEl.addEventListener('change', async () => {
+		const file = fileEl.files && fileEl.files[0];
+		if (!file) {
+			updatePreview(iconUrlEl.value);
+			return;
+		}
+
+		if (!file.type.startsWith('image/')) {
+			alert({
+				type: 'danger',
+				message: 'Icon upload must be an image file.',
+			});
+			fileEl.value = '';
+			return;
+		}
+
+		const maxBytes = 100 * 1024;
+		if (file.size > maxBytes) {
+			alert({
+				type: 'danger',
+				message: 'Icon upload must be 100KB or smaller.',
+			});
+			fileEl.value = '';
+			return;
+		}
+
+		if (removeEl) {
+			removeEl.checked = false;
+		}
+
+		const reader = new FileReader();
+		reader.onload = () => {
+			const dataUrl = reader.result;
+			post('/plugins/oauth2-multiple/upload-icon', { dataUrl }).then((data) => {
+				const url = (data.response && data.response.url) || data.url;
+				if (url) {
+					iconUrlEl.value = url;
+					updatePreview(url);
+				}
+				fileEl.value = '';
+			}).catch((err) => {
+				alert({
+					type: 'danger',
+					message: err.message || err.status?.message || 'Icon upload failed.',
+				});
+				fileEl.value = '';
+			});
+		};
+		reader.onerror = () => {
+			alert({
+				type: 'danger',
+				message: 'Failed to read file.',
+			});
+			fileEl.value = '';
+		};
+		reader.readAsDataURL(file);
+	});
+
+	if (removeEl) {
+		removeEl.addEventListener('change', () => {
+			if (!removeEl.checked) {
+				return;
+			}
+			fileEl.value = '';
+			iconUrlEl.value = '';
+			updatePreview('');
+		});
+	}
 }
 
 function handleDeleteStrategy(ok, name) {

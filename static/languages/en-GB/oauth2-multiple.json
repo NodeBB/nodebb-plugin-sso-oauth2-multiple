@@ -1,0 +1,6 @@
+{
+	"choose-username.title": "Choose your username",
+	"choose-username.intro": "You signed in via %1. Pick the username you want to use on this forum. This cannot be easily changed later.",
+	"choose-username.help": "Letters, numbers, spaces, periods, hyphens and underscores are allowed.",
+	"choose-username.email-provider": "Your email comes from your identity provider and cannot be edited here."
+}
