@@ -2,17 +2,17 @@
 # yarn lockfile v1
 
 
-"@commitlint/config-angular-type-enum@^17.8.1":
-  version "17.8.1"
-  resolved "https://registry.npmjs.org/@commitlint/config-angular-type-enum/-/config-angular-type-enum-17.8.1.tgz"
-  integrity sha512-vuIQ9rZckMPRM6I3mWzfWb7TfvE/yHJXNKaR2weuhf+lQEVSZSGQP3LwdXpMcT2QGKE9VAhU/jw0qIE0Z9EbHA==
+"@commitlint/config-angular-type-enum@^21.0.1":
+  version "21.0.1"
+  resolved "https://registry.npmjs.org/@commitlint/config-angular-type-enum/-/config-angular-type-enum-21.0.1.tgz"
+  integrity sha512-xTQlgHTaQyXfFpPI3w2dI7ppuTDWmF++1W/kgNohRpxhBzAoJxc6Q/2P7EjvJodtVl7+38xHyu0STtV4ERXdhg==
 
-"@commitlint/config-angular@17.8.1":
-  version "17.8.1"
-  resolved "https://registry.npmjs.org/@commitlint/config-angular/-/config-angular-17.8.1.tgz"
-  integrity sha512-M3gfC2YttKOEDHrtOtCHfoIdF74vUc+ffJHTyU6j+xqlXrc34iOS665r1rRaTgX6CEeUAnNdpWn0zKYZTj27lA==
+"@commitlint/config-angular@21.0.2":
+  version "21.0.2"
+  resolved "https://registry.npmjs.org/@commitlint/config-angular/-/config-angular-21.0.2.tgz"
+  integrity sha512-r9MQv2ncceCvhr4S3vECbuW1771Di6csfKvFDXEGAJPaW+iTC13gh4Zs5CH9C35SAbZhaAXbIC7iRBTYPocSrQ==
   dependencies:
-    "@commitlint/config-angular-type-enum" "^17.8.1"
+    "@commitlint/config-angular-type-enum" "^21.0.1"
 
 ansi-escapes@^7.0.0:
   version "7.3.0"
