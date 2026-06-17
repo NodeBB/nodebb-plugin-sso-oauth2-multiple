@@ -11,6 +11,8 @@ const meta = require.main.require('./src/meta');
 const groups = require.main.require('./src/groups');
 const authenticationController = require.main.require('./src/controllers/authentication');
 const routeHelpers = require.main.require('./src/routes/helpers');
+const slugify = require.main.require('./src/slugify');
+const utils = require.main.require('./public/src/utils');
 
 const OAuth = module.exports;
 
@@ -29,7 +31,7 @@ OAuth.addRoutes = async ({ router, middleware }) => {
 	];
 
 	routeHelpers.setupApiRoute(router, 'get', '/oauth2-multiple/discover', middlewares, controllers.getOpenIdMetadata);
-
+	routeHelpers.setupApiRoute(router, 'post', '/oauth2-multiple/upload-icon', middlewares, controllers.uploadIcon);
 	routeHelpers.setupApiRoute(router, 'post', '/oauth2-multiple/strategies', middlewares, controllers.editStrategy);
 	routeHelpers.setupApiRoute(router, 'get', '/oauth2-multiple/strategies/:name', middlewares, controllers.getStrategy);
 	routeHelpers.setupApiRoute(router, 'delete', '/oauth2-multiple/strategies/:name', middlewares, controllers.deleteStrategy);
@@ -62,12 +64,14 @@ OAuth.getStrategy = async (name) => {
 async function getStrategies(names, full) {
 	const strategies = await db.getObjects(names.map(name => `oauth2-multiple:strategies:${name}`), full ? undefined : ['enabled']);
 	strategies.forEach((strategy, idx) => {
+		if (!strategy) {
+			return;
+		}
 		strategy.name = names[idx];
 		strategy.enabled = strategy.enabled === 'true' || strategy.enabled === true;
 		strategy.callbackUrl = `${nconf.get('url')}/auth/${names[idx]}/callback`;
 	});
-
-	return strategies;
+	return strategies.filter(Boolean);
 }
 
 OAuth.loadStrategies = async (strategies) => {
@@ -102,7 +106,8 @@ OAuth.loadStrategies = async (strategies) => {
 				handle: displayName,
 				email,
 				email_verified,
-			});
+			}, req);
+
 			winston.verbose(`[plugin/sso-oauth2-multiple] Successful login to uid ${user.uid} via ${name} (remote id ${id})`);
 			await authenticationController.onSuccessfulLogin(req, user.uid);
 			await OAuth.assignGroups({ provider: name, user, profile });
@@ -120,22 +125,39 @@ OAuth.loadStrategies = async (strategies) => {
 		passport.use(configured[idx].name, strategy);
 	});
 
-	strategies.push(...configured.map(({ name, scope, loginLabel, registerLabel, faIcon }) => ({
+	strategies.push(...configured.map(({
 		name,
-		url: `/auth/${name}`,
-		callbackURL: `/auth/${name}/callback`,
-		icon: faIcon || 'fa-right-to-bracket',
-		icons: {
-			normal: `fa ${faIcon || 'fa-right-to-bracket'}`,
-			square: `fa ${faIcon || 'fa-right-to-bracket'}`,
-		},
-		labels: {
-			login: loginLabel || 'Log In',
-			register: registerLabel || 'Register',
-		},
-		color: '#666',
-		scope: scope || 'openid email profile',
-	})));
+		scope,
+		loginLabel,
+		registerLabel,
+		faIcon,
+		iconUrl,
+	}) => {
+		const hasCustomIcon = Boolean(iconUrl);
+		const fallbackIcon = faIcon || 'fa-right-to-bracket';
+		const iconClass = `fa ${fallbackIcon}`;
+		const escapedUrl = hasCustomIcon ? iconUrl.replace(/'/g, "\\'") : '';
+
+		return {
+			name,
+			url: `/auth/${name}`,
+			callbackURL: `/auth/${name}/callback`,
+			icon: fallbackIcon,
+			icons: {
+				normal: iconClass,
+				square: iconClass,
+				...(hasCustomIcon && {
+					svg: `<i class="sso-oauth2-icon" style="background-image:url('${escapedUrl}');display:inline-block;width:1em;height:1em;background-size:contain;background-repeat:no-repeat;background-position:center;vertical-align:middle;"></i>`,
+				}),
+			},
+			labels: {
+				login: loginLabel || 'Log In',
+				register: registerLabel || 'Register',
+			},
+			color: '#666',
+			scope: scope || 'openid email profile',
+		};
+	}));
 
 	return strategies;
 };
@@ -211,44 +233,60 @@ OAuth.getAssociations = async () => {
 	}));
 };
 
-OAuth.login = async (payload) => {
+OAuth.login = async (payload, req) => {
 	let uid = await OAuth.getUidByOAuthid(payload.name, payload.oAuthid);
 	if (uid !== null) {
 		// Existing User
 		return ({ uid });
 	}
 
-	const { trustEmailVerified } = await OAuth.getStrategy(payload.name);
+	const { trustEmailVerified, usernameChoice } = await OAuth.getStrategy(payload.name);
 	const { email } = payload;
 	const email_verified =
 		parseInt(trustEmailVerified, 10) &&
 		(payload.email_verified || payload.email_verified === true);
 
 
-	// Check for user via email fallback
+	// Check for user via email fallback -- linking path, never shows the picker
 	if (email && email_verified) {
 		uid = await user.getUidByEmail(payload.email);
 	}
 
-	if (!uid) {
-		// New user
-		uid = await user.create({
-			username: payload.handle,
-		});
+	if (uid) {
+		await user.setUserField(uid, `${payload.name}Id`, payload.oAuthid);
+		await db.setObjectField(`${payload.name}Id:uid`, payload.oAuthid, uid);
+		return { uid };
+	}
 
-		// Automatically confirm user email
-		if (email) {
-			await user.setUserField(uid, 'email', email);
+	// Brand-new user. When usernameChoice is on, create with a unique placeholder
+	// and stage a session marker so middleware.registrationComplete routes the
+	// logged-in user through /register/complete, where our interstitial fires.
+	const pickerMode = Boolean(parseInt(usernameChoice, 10) && req);
+	const username = pickerMode ?
+		`oauth2-tmp-${payload.name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` :
+		payload.handle;
 
-			if (email_verified) {
-				await user.email.confirmByUid(uid);
-			}
+	uid = await user.create({ username });
+
+	if (email) {
+		await user.setUserField(uid, 'email', email);
+		if (email_verified) {
+			await user.email.confirmByUid(uid);
 		}
 	}
 
-	// Save provider-specific information to the user
 	await user.setUserField(uid, `${payload.name}Id`, payload.oAuthid);
 	await db.setObjectField(`${payload.name}Id:uid`, payload.oAuthid, uid);
+
+	if (pickerMode) {
+		req.session.registration = req.session.registration || {};
+		req.session.registration.uid = uid;
+		req.session.registration._oauth2MultipleRename = {
+			provider: payload.name,
+			suggestedBase: payload.handle || (email ? email.split('@')[0] : ''),
+			email: email || '',
+		};
+	}
 
 	return { uid };
 };
@@ -325,4 +363,81 @@ OAuth.whitelistFields = async (params) => {
 	params.whitelist.push(...names.map(name => `${name}Id`));
 
 	return params;
+};
+
+OAuth.addInterstitial = async (data) => {
+	const { userData, interstitials } = data;
+	const marker = userData && userData._oauth2MultipleRename;
+	if (!marker || !userData.uid) {
+		return data;
+	}
+
+	const suggested = await OAuth.suggestAvailableUsername(marker.suggestedBase, marker.email);
+
+	interstitials.push({
+		template: 'partials/oauth2-multiple/choose-username.tpl',
+		data: {
+			provider: marker.provider,
+			suggestedUsername: suggested,
+			email: marker.email || '',
+		},
+		callback: OAuth.onUsernameSubmit,
+	});
+
+	return data;
+};
+
+OAuth.onUsernameSubmit = async (userData, formData) => {
+	const marker = userData && userData._oauth2MultipleRename;
+	if (!marker || !userData.uid) {
+		return userData;
+	}
+
+	const chosen = (formData.username || '').trim();
+	if (!chosen || !utils.isUserNameValid(chosen)) {
+		throw new Error('[[error:invalid-username]]');
+	}
+
+	const slug = slugify(chosen);
+	if (!slug) {
+		throw new Error('[[error:invalid-username]]');
+	}
+
+	const [existingUid, groupExists] = await Promise.all([
+		user.getUidByUserslug(slug),
+		groups.exists(chosen),
+	]);
+	if ((existingUid && parseInt(existingUid, 10) !== parseInt(userData.uid, 10)) || groupExists) {
+		throw new Error('[[error:username-taken]]');
+	}
+
+	await user.updateProfile(userData.uid, { uid: userData.uid, username: chosen }, ['username']);
+
+	// Strip marker + temp fields so registerComplete's setUserFields doesn't overwrite the rename.
+	delete userData._oauth2MultipleRename;
+	Object.keys(userData).forEach((key) => {
+		if (key !== 'uid' && key !== 'returnTo') {
+			delete userData[key];
+		}
+	});
+	return userData;
+};
+
+OAuth.suggestAvailableUsername = async (handle, email) => {
+	const base = ((handle && handle.trim()) ||
+		(email && email.split('@')[0]) || 'user').trim();
+	const baseSlug = slugify(base);
+	if (baseSlug && !(await user.existsBySlug(baseSlug)) && !(await groups.exists(base))) {
+		return base;
+	}
+	for (let i = 1; i < 100; i += 1) {
+		const candidate = `${base}${i}`;
+		const slug = slugify(candidate);
+		/* eslint-disable no-await-in-loop */
+		if (slug && !(await user.existsBySlug(slug)) && !(await groups.exists(candidate))) {
+			return candidate;
+		}
+		/* eslint-enable no-await-in-loop */
+	}
+	return base;
 };
