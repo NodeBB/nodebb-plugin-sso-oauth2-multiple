@@ -36,6 +36,22 @@
 					If none is set, then <i class="fa fa-right-to-bracket"></i> will be used.
 				</p>
 			</div>
+			<div class="mb-3">
+				<label class="form-label" for="iconFile">Custom Icon Upload</label>
+				<input type="hidden" name="iconUrl" value="{./iconUrl}">
+				<input type="file" id="iconFile" name="iconFile" class="form-control" accept="image/*">
+				<p class="form-text">
+					<strong>Optional</strong> — upload a small image (PNG, SVG, etc.) to use instead of the FontAwesome icon.
+					Max size 100KB.
+				</p>
+				<div class="d-flex align-items-center gap-2">
+					<img id="iconPreview" src="{./iconUrl}" alt="Custom icon preview" class="rounded d-none" style="width: 28px; height: 28px; object-fit: contain;">
+					<div class="form-check form-switch">
+						<input type="checkbox" class="form-check-input" id="removeIcon" name="removeIcon">
+						<label for="removeIcon" class="form-check-label">Remove custom icon</label>
+					</div>
+				</div>
+			</div>
 
 			<div class="mb-3">
 				<label class="form-label" for="loginLabel">&quot;Login&quot; Label Text</label>
@@ -114,6 +130,11 @@
 						<div class="form-check form-switch mb-3">
 							<input type="checkbox" class="form-check-input" id="forceUsernameViaEmail" name="forceUsernameViaEmail" {{{ if (./forceUsernameViaEmail == "1") }}}checked{{{ end }}}>
 							<label for="forceUsernameViaEmail" class="form-check-label">Use email as username <span class="form-text text-danger">(supercedes previous option).</span></label>
+						</div>
+
+						<div class="form-check form-switch mb-3">
+							<input type="checkbox" class="form-check-input" id="usernameChoice" name="usernameChoice" {{{ if (./usernameChoice == "1") }}}checked{{{ end }}}>
+							<label for="usernameChoice" class="form-check-label">Let the user pick their own NodeBB username on first login <span class="form-text text-danger">(supersedes both options above).</span></label>
 						</div>
 
 						<div class="form-check form-switch mb-3">
