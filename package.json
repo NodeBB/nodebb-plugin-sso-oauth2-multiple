@@ -1,6 +1,6 @@
 {
   "name": "nodebb-plugin-sso-oauth2-multiple",
-  "version": "1.5.2",
+  "version": "2.0.0",
   "description": "NodeBB Multiple OAuth2 SSO",
   "main": "library.js",
   "repository": {
