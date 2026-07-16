@@ -1,16 +1,16 @@
 'use strict';
 
-const passport = module.parent.require('passport');
-const nconf = module.parent.require('nconf');
-const winston = module.parent.require('winston');
+const passport = nodebb.require('passport');
+const nconf = nodebb.require('nconf');
+const winston = nodebb.require('winston');
 
-const db = require.main.require('./src/database');
-const user = require.main.require('./src/user');
-const plugins = require.main.require('./src/plugins');
-const meta = require.main.require('./src/meta');
-const groups = require.main.require('./src/groups');
-const authenticationController = require.main.require('./src/controllers/authentication');
-const routeHelpers = require.main.require('./src/routes/helpers');
+const db = nodebb.require('./src/database');
+const user = nodebb.require('./src/user');
+const plugins = nodebb.require('./src/plugins');
+const meta = nodebb.require('./src/meta');
+const groups = nodebb.require('./src/groups');
+const authenticationController = nodebb.require('./src/controllers/authentication');
+const routeHelpers = nodebb.require('./src/routes/helpers');
 
 const OAuth = module.exports;
 
