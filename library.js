@@ -211,18 +211,45 @@ OAuth.getAssociations = async () => {
 	}));
 };
 
+OAuth.isEmailTrusted = (strategy, payload) => {
+	if (parseInt(strategy.skipEmailVerification, 10)) {
+		return true;
+	}
+
+	return !!parseInt(strategy.trustEmailVerified, 10) &&
+		(payload.email_verified || payload.email_verified === true);
+};
+
+OAuth.confirmEmailIfTrusted = async (payload, uid) => {
+	const strategy = await OAuth.getStrategy(payload.name);
+	if (!payload.email || !OAuth.isEmailTrusted(strategy, payload)) {
+		return;
+	}
+
+	const { email, 'email:confirmed': confirmed } = await user.getUserFields(uid, ['email', 'email:confirmed']);
+	if (parseInt(confirmed, 10) === 1 || (email && email.toLowerCase() !== payload.email.toLowerCase())) {
+		return;
+	}
+
+	if (!email) {
+		await user.setUserField(uid, 'email', payload.email);
+	}
+
+	await user.email.confirmByUid(uid);
+	winston.verbose(`[plugin/sso-oauth2-multiple] Confirmed email for uid ${uid} via ${payload.name}`);
+};
+
 OAuth.login = async (payload) => {
 	let uid = await OAuth.getUidByOAuthid(payload.name, payload.oAuthid);
 	if (uid !== null) {
 		// Existing User
+		await OAuth.confirmEmailIfTrusted(payload, uid);
 		return ({ uid });
 	}
 
-	const { trustEmailVerified } = await OAuth.getStrategy(payload.name);
+	const strategy = await OAuth.getStrategy(payload.name);
 	const { email } = payload;
-	const email_verified =
-		parseInt(trustEmailVerified, 10) &&
-		(payload.email_verified || payload.email_verified === true);
+	const email_verified = OAuth.isEmailTrusted(strategy, payload);
 
 
 	// Check for user via email fallback
