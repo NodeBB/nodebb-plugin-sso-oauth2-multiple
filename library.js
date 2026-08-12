@@ -241,7 +241,11 @@ OAuth.login = async (payload) => {
 			await user.setUserField(uid, 'email', email);
 
 			if (email_verified) {
-				await user.email.confirmByUid(uid);
+				try {
+					await user.email.confirmByUid(uid);
+				} catch (err) {
+					winston.warn(`[plugin/sso-oauth2-multiple] Could not confirm ${email} for uid ${uid}: ${err.message}`);
+				}
 			}
 		}
 	}
