@@ -166,13 +166,18 @@ OAuth.parseUserReturn = async (provider, profile) => {
 		id, sub,
 		name, nickname, preferred_username,
 		given_name, middle_name, family_name,
+		givenname, familyname,
 		picture, roles, email, email_verified,
 	} = profile;
 	const { usernameViaEmail, forceUsernameViaEmail, idKey } = await OAuth.getStrategy(provider);
 
 	const displayName = nickname || preferred_username || name;
 
-	const combinedFullName = [given_name, middle_name, family_name].filter(Boolean).join(' ');
+	const combinedFullName = [
+		given_name || givenname,
+		middle_name,
+		family_name || familyname,
+	].filter(Boolean).join(' ');
 	const fullname = name || combinedFullName;
 
 	const normalized = {
