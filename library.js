@@ -191,7 +191,8 @@ OAuth.parseUserReturn = async (provider, profile) => {
 		email_verified,
 	};
 
-	if (forceUsernameViaEmail || (!normalized.displayName && email && usernameViaEmail === 'on')) {
+	if (parseInt(forceUsernameViaEmail, 10) ||
+		(!normalized.displayName && email && parseInt(usernameViaEmail, 10))) {
 		normalized.displayName = email.split('@')[0];
 	}
 
