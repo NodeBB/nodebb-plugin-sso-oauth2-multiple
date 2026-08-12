@@ -218,7 +218,7 @@ OAuth.login = async (payload) => {
 		return ({ uid });
 	}
 
-	const { trustEmailVerified } = await OAuth.getStrategy(payload.name);
+	const { trustEmailVerified, disableEmailFallback } = await OAuth.getStrategy(payload.name);
 	const { email } = payload;
 	const email_verified =
 		parseInt(trustEmailVerified, 10) &&
@@ -226,7 +226,7 @@ OAuth.login = async (payload) => {
 
 
 	// Check for user via email fallback
-	if (email && email_verified) {
+	if (email && email_verified && !parseInt(disableEmailFallback, 10)) {
 		uid = await user.getUidByEmail(payload.email);
 	}
 
