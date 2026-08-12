@@ -211,13 +211,17 @@ OAuth.getAssociations = async () => {
 	}));
 };
 
+OAuth.isEmailVerifiedByProvider = (strategy, payload) => (
+	!!parseInt(strategy.trustEmailVerified, 10) &&
+	(payload.email_verified || payload.email_verified === true)
+);
+
 OAuth.isEmailTrusted = (strategy, payload) => {
 	if (parseInt(strategy.skipEmailVerification, 10)) {
 		return true;
 	}
 
-	return !!parseInt(strategy.trustEmailVerified, 10) &&
-		(payload.email_verified || payload.email_verified === true);
+	return OAuth.isEmailVerifiedByProvider(strategy, payload);
 };
 
 OAuth.confirmEmailIfTrusted = async (payload, uid) => {
@@ -253,7 +257,7 @@ OAuth.login = async (payload) => {
 
 
 	// Check for user via email fallback
-	if (email && email_verified) {
+	if (email && OAuth.isEmailVerifiedByProvider(strategy, payload)) {
 		uid = await user.getUidByEmail(payload.email);
 	}
 
