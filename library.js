@@ -164,14 +164,14 @@ OAuth.getUserProfile = function (name, userRoute, accessToken, done) {
 OAuth.parseUserReturn = async (provider, profile) => {
 	const {
 		id, sub,
-		name, nickname, preferred_username,
+		name, nickname, preferred_username, login,
 		given_name, middle_name, family_name,
 		givenname, familyname,
-		picture, roles, email, email_verified,
+		picture, avatar_url, roles, email, email_verified,
 	} = profile;
 	const { usernameViaEmail, forceUsernameViaEmail, idKey } = await OAuth.getStrategy(provider);
 
-	const displayName = nickname || preferred_username || name;
+	const displayName = nickname || preferred_username || login || name;
 
 	const combinedFullName = [
 		given_name || givenname,
@@ -185,7 +185,7 @@ OAuth.parseUserReturn = async (provider, profile) => {
 		id: profile[idKey] || id || sub,
 		displayName,
 		fullname,
-		picture,
+		picture: picture || avatar_url,
 		roles,
 		email,
 		email_verified,
