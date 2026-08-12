@@ -121,6 +121,11 @@
 							<label for="trustEmailVerified" class="form-check-label">Automatically confirm emails when <code>email_verified</code> is true.</code></label>
 						</div>
 
+						<div class="form-check form-switch mb-3">
+							<input type="checkbox" class="form-check-input" id="skipEmailVerification" name="skipEmailVerification" {{{ if (./skipEmailVerification == "1") }}}checked{{{ end }}}>
+							<label for="skipEmailVerification" class="form-check-label">Skip email verification for people who register using SSO?</label>
+						</div>
+
 						<div class="mb-3">
 							<label class="form-label" for="idKey">Alternative <code>id</code> key</label>
 							<input type="text" id="idKey" name="idKey" title="Alternative id key" class="form-control" placeholder="e.g. auth0Id" value="{./idKey}">
