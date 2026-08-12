@@ -142,6 +142,18 @@
 							<input type="checkbox" class="form-check-input" id="syncPicture" name="syncPicture" {{{ if (./syncPicture == "1") }}}checked{{{ end }}}>
 							<label for="syncPicture" class="form-check-label">Picture</label>
 						</div>
+
+						<div class="form-check form-switch mb-3">
+							<input type="checkbox" class="form-check-input" id="fetchPictureWithToken" name="fetchPictureWithToken" {{{ if (./fetchPictureWithToken == "1") }}}checked{{{ end }}}>
+							<label for="fetchPictureWithToken" class="form-check-label">
+								Download the picture using the access token instead of storing its URL
+								<p class="form-text">
+									Required when the picture URL is not publicly reachable, e.g. Microsoft Graph's
+									<code>/me/photo/$value</code>. The image is uploaded to this forum once, and is not
+									overwritten if the user later sets their own avatar.
+								</p>
+							</label>
+						</div>
 					</div>
 				</div>
 			</details>

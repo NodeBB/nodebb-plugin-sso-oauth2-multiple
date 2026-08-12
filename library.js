@@ -154,6 +154,7 @@ OAuth.getUserProfile = function (name, userRoute, accessToken, done) {
 			const json = JSON.parse(body);
 			const profile = await OAuth.parseUserReturn(name, json);
 			profile.provider = name;
+			profile.accessToken = accessToken;
 			done(null, profile);
 		} catch (e) {
 			done(e);
@@ -277,10 +278,53 @@ OAuth.assignGroups = async ({ user, profile }) => {
 	winston.verbose(`[plugins/sso-auth0] uid ${uid} now a part of ${toJoin.length} these user groups: ${toJoin.join(', ')}`);
 };
 
+OAuth.syncPictureViaToken = async (uid, profile, strategy) => {
+	const enabled = parseInt(strategy.syncPicture, 10) && parseInt(strategy.fetchPictureWithToken, 10);
+	if (!enabled || !profile.picture || !profile.accessToken) {
+		return false;
+	}
+
+	const { uploadedpicture } = await user.getUserFields(uid, ['uploadedpicture']);
+	if (uploadedpicture) {
+		return true;
+	}
+
+	try {
+		const res = await fetch(profile.picture, {
+			headers: { Authorization: `Bearer ${profile.accessToken}` },
+		});
+		if (!res.ok) {
+			winston.verbose(`[plugin/sso-oauth2-multiple] Picture for uid ${uid} unavailable (${res.status})`);
+			return false;
+		}
+
+		const buffer = Buffer.from(await res.arrayBuffer());
+		if (!buffer.length) {
+			return false;
+		}
+
+		const type = (res.headers.get('content-type') || 'image/jpeg').split(';')[0];
+		await user.uploadCroppedPicture({
+			callerUid: uid,
+			uid,
+			imageData: `data:${type};base64,${buffer.toString('base64')}`,
+		});
+
+		return true;
+	} catch (err) {
+		winston.warn(`[plugin/sso-oauth2-multiple] Unable to sync picture for uid ${uid}: ${err.message}`);
+		return false;
+	}
+};
+
 OAuth.updateProfile = async (uid, profile) => {
 	const fields = ['fullname', 'picture'];
 	const strategy = await OAuth.getStrategy(profile.provider);
 	const allowList = [];
+
+	if (await OAuth.syncPictureViaToken(uid, profile, strategy)) {
+		fields.splice(fields.indexOf('picture'), 1);
+	}
 
 	const payload = fields.reduce((memo, field) => {
 		const setting = `sync${field[0].toUpperCase()}${field.slice(1)}`;
