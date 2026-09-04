@@ -17,7 +17,7 @@ export function init() {
 			switch (action) {
 				case 'new': {
 					const title = 'New OAuth2 Strategy';
-					const message = await app.parseAndTranslate('partials/edit-oauth2-strategy', {});
+					const message = await render('partials/edit-oauth2-strategy', {});
 					confirm({
 						title,
 						message,
@@ -33,7 +33,7 @@ export function init() {
 					const name = subselector.closest('[data-name]').getAttribute('data-name');
 					const { strategy } = await get(`/plugins/oauth2-multiple/strategies/${name}`);
 					const title = 'Edit OAuth2 Strategy';
-					const message = await app.parseAndTranslate('partials/edit-oauth2-strategy', { ...strategy });
+					const message = await render('partials/edit-oauth2-strategy', { ...strategy });
 					confirm({
 						title,
 						message,
