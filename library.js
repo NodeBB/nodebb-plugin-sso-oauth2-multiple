@@ -11,6 +11,8 @@ const meta = nodebb.require('./src/meta');
 const groups = nodebb.require('./src/groups');
 const authenticationController = nodebb.require('./src/controllers/authentication');
 const routeHelpers = nodebb.require('./src/routes/helpers');
+const slugify = nodebb.require('./src/slugify');
+const utils = nodebb.require('./public/src/utils');
 
 const OAuth = module.exports;
 
