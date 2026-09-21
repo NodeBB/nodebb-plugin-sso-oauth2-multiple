@@ -413,13 +413,10 @@ OAuth.onUsernameSubmit = async (userData, formData) => {
 
 	await user.updateProfile(userData.uid, { uid: userData.uid, username: chosen }, ['username']);
 
-	// Strip marker + temp fields so registerComplete's setUserFields doesn't overwrite the rename.
+	// Only our own marker is stripped; registerComplete writes every remaining key
+	// (gdpr_consent, acceptTos, ...) to the user hash.
 	delete userData._oauth2MultipleRename;
-	Object.keys(userData).forEach((key) => {
-		if (key !== 'uid' && key !== 'returnTo') {
-			delete userData[key];
-		}
-	});
+	delete userData.username;
 	return userData;
 };
 
