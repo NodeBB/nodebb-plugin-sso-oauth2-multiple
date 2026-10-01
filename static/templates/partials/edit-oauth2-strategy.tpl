@@ -107,7 +107,16 @@
 				<div class="row">
 					<div class="col-sm-6">
 						<div class="form-check form-switch mb-3">
-							<input type="checkbox" class="form-check-input" id="usernameViaEmail" name="usernameViaEmail" {{{ if (./usernameViaEmail == "1") }}}checked{{{ end }}}>
+							<input type="checkbox" class="form-check-input" id="usePkce" name="usePkce" {{{ if (./usePkce == "1") }}}checked{{{ end }}}}>
+							<label for="usePkce" class="form-check-label">Use PKCE (<code>code_challenge</code>)</label>
+						</div>
+						<p class="form-text">
+							Enable this if your provider requires PKCE for the authorization code flow
+							(e.g. Microsoft Entra ID, Google). Most modern OpenID Connect providers accept it.
+						</p>
+
+						<div class="form-check form-switch mb-3">
+							<input type="checkbox" class="form-check-input" id="usernameViaEmail" name="usernameViaEmail" {{{ if (./usernameViaEmail == "1") }}}checked{{{ end }}}}
 							<label for="usernameViaEmail" class="form-check-label">Fall back to email as username if no username available (e.g. <code><strong>username</strong>@example.org</code>).</label>
 						</div>
 

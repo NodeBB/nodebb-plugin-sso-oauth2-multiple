@@ -83,12 +83,15 @@ OAuth.loadStrategies = async (strategies) => {
 		id: clientID,
 		secret: clientSecret,
 		callbackUrl: callbackURL,
+		usePkce,
 	}) => new passportOAuth({
 		authorizationURL,
 		tokenURL,
 		clientID,
 		clientSecret,
 		callbackURL,
+		state: true,
+		pkce: parseInt(usePkce, 10) ? true : undefined,
 		passReqToCallback: true,
 	}, async (req, token, secret, profile, done) => {
 		const { id, displayName, email, email_verified } = profile;
