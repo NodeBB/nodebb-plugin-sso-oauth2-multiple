@@ -32,7 +32,7 @@
   "readmeFilename": "README.md",
   "dependencies": {
     "async": "^3.2.0",
-    "node-fetch": "^2",
+    "node-fetch": "^3.0.0",
     "passport-oauth": "~1.0.0"
   },
   "nbbpm": {
