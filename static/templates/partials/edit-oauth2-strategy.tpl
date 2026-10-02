@@ -107,7 +107,7 @@
 				<div class="row">
 					<div class="col-sm-6">
 						<div class="form-check form-switch mb-3">
-							<input type="checkbox" class="form-check-input" id="usePkce" name="usePkce" {{{ if (./usePkce == "1") }}}checked{{{ end }}}}>
+							<input type="checkbox" class="form-check-input" id="usePkce" name="usePkce" {{{ if (./usePkce == "1") }}}checked{{{ end }}}>
 							<label for="usePkce" class="form-check-label">Use PKCE (<code>code_challenge</code>)</label>
 						</div>
 						<p class="form-text">
