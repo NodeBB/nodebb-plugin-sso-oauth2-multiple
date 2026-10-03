@@ -63,7 +63,8 @@ async function getStrategies(names, full) {
 	const strategies = await db.getObjects(names.map(name => `oauth2-multiple:strategies:${name}`), full ? undefined : ['enabled']);
 	strategies.forEach((strategy, idx) => {
 		strategy.name = names[idx];
-		strategy.enabled = strategy.enabled === 'true' || strategy.enabled === true;
+		strategy.enabled = strategy.enabled === 'true' || strategy.enabled === true || strategy.enabled === 1 || strategy.enabled === '1';
+		strategy.usePkce = strategy.usePkce === 'true' || strategy.usePkce === true || strategy.usePkce === 1 || strategy.usePkce === '1';
 		strategy.callbackUrl = `${nconf.get('url')}/auth/${names[idx]}/callback`;
 	});
 
@@ -91,7 +92,7 @@ OAuth.loadStrategies = async (strategies) => {
 		clientSecret,
 		callbackURL,
 		state: true,
-		pkce: parseInt(usePkce, 10) ? true : undefined,
+		pkce: usePkce ? true : false,
 		passReqToCallback: true,
 	}, async (req, token, secret, profile, done) => {
 		const { id, displayName, email, email_verified } = profile;
@@ -125,6 +126,9 @@ OAuth.loadStrategies = async (strategies) => {
 
 	strategies.push(...configured.map(({ name, scope, loginLabel, registerLabel, faIcon }) => ({
 		name,
+		// PKCE: Bypass nodebb checkState, let passport-oauth2 validate the OAuth state end-to-end. Still secure + CSRF still passed by nodebb.
+		// Reference: https://github.com/NodeBB/NodeBB/blob/master/src/routes/authentication.js#L115
+		checkState: usePkce ? false : true,
 		url: `/auth/${name}`,
 		callbackURL: `/auth/${name}/callback`,
 		icon: faIcon || 'fa-right-to-bracket',
