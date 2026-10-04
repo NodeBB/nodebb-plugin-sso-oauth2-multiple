@@ -126,8 +126,6 @@ OAuth.loadStrategies = async (strategies) => {
 
 	strategies.push(...configured.map(({ name, scope, loginLabel, registerLabel, faIcon }) => ({
 		name,
-		// PKCE: Bypass nodebb checkState, let passport-oauth2 validate the OAuth state end-to-end. Still secure + CSRF still passed by nodebb.
-		// Reference: https://github.com/NodeBB/NodeBB/blob/master/src/routes/authentication.js#L115
 		checkState: usePkce ? false : true,
 		url: `/auth/${name}`,
 		callbackURL: `/auth/${name}/callback`,
