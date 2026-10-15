@@ -124,7 +124,7 @@ OAuth.loadStrategies = async (strategies) => {
 		passport.use(configured[idx].name, strategy);
 	});
 
-	strategies.push(...configured.map(({ name, scope, loginLabel, registerLabel, faIcon }) => ({
+	strategies.push(...configured.map(({ name, scope, loginLabel, registerLabel, faIcon, usePkce }) => ({
 		name,
 		checkState: usePkce ? false : true,
 		url: `/auth/${name}`,
