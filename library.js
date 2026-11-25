@@ -261,8 +261,11 @@ OAuth.login = async (payload) => {
 OAuth.assignGroups = async ({ user, profile }) => {
 	const oauthRoles = profile.roles || [];
 	if (!Array.isArray(oauthRoles)) {
-		winston.verbose(`[plugins/sso-auth0] roles should be an array, got ${oauthRoles}`);
+		winston.verbose(`[plugin/sso-oauth2-multiple] roles should be an array, got ${oauthRoles}`);
 		return;
+	}
+	if (!profile.roles) {
+		winston.verbose('[plugin/sso-oauth2-multiple] no roles claim from provider, removing user from all mapped groups');
 	}
 	const { uid } = user;
 	const associations = await OAuth.getAssociations();
@@ -276,12 +279,12 @@ OAuth.assignGroups = async ({ user, profile }) => {
 		return memo;
 	}, { toJoin: [], toLeave: [] });
 	if (toLeave.length) {
-		winston.verbose(`[plugins/sso-auth0] uid ${uid} now leaving ${toLeave.length} these user groups: ${toLeave.join(', ')}`);
+		winston.verbose(`[plugin/sso-oauth2-multiple] uid ${uid} now leaving ${toLeave.length} these user groups: ${toLeave.join(', ')}`);
 		await groups.leave(toLeave, uid);
 	}
 	if (toJoin.length) {
 		await groups.join(toJoin, uid);
-		winston.verbose(`[plugins/sso-auth0] uid ${uid} now a part of ${toJoin.length} these user groups: ${toJoin.join(', ')}`);
+		winston.verbose(`[plugin/sso-oauth2-multiple] uid ${uid} now a part of ${toJoin.length} these user groups: ${toJoin.join(', ')}`);
 	}
 };
 
