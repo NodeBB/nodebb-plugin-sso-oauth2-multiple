@@ -17,12 +17,13 @@
 			<div class="mb-3">
 				<label class="form-label" for="domain">Issuer URL</label>
 				<div class="input-group">
-					<input type="url" id="domain" name="domain" title="domain" class="form-control" placeholder="https://foo.example.org">
+					<input type="text" id="domain" name="domain" title="domain" class="form-control" placeholder="https://foo.example.org">
 					<span class="input-group-text text-success d-none" id="discovery-success">&check;</span>
 					<span class="input-group-text text-warning d-none" id="discovery-failure">&cross;</span>
 				</div>
 				<p class="form-text">
 					<strong>Optional</strong> — fill in the Issuer URL to automatically discover the endpoints if supported by the server.
+					(e.g. <code>https://example.org</code>)
 				</p>
 			</div>
 
