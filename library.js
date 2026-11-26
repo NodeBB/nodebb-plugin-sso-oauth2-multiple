@@ -212,17 +212,20 @@ OAuth.getAssociations = async () => {
 };
 
 OAuth.login = async (payload) => {
-	let uid = await OAuth.getUidByOAuthid(payload.name, payload.oAuthid);
-	if (uid !== null) {
-		// Existing User
-		return ({ uid });
-	}
-
 	const { trustEmailVerified } = await OAuth.getStrategy(payload.name);
 	const { email } = payload;
 	const email_verified =
 		parseInt(trustEmailVerified, 10) &&
 		(payload.email_verified || payload.email_verified === true);
+
+	let uid = await OAuth.getUidByOAuthid(payload.name, payload.oAuthid);
+	if (uid !== null) {
+		// Existing user: keep the email in sync with the provider when the provider is trusted
+		if (email && email_verified) {
+			await OAuth.syncVerifiedEmail(uid, email);
+		}
+		return ({ uid });
+	}
 
 
 	// Check for user via email fallback
@@ -251,6 +254,30 @@ OAuth.login = async (payload) => {
 	await db.setObjectField(`${payload.name}Id:uid`, payload.oAuthid, uid);
 
 	return { uid };
+};
+
+// Sets the provider's verified email on an existing user and confirms it.
+// Skipped (with a warning) when another account already owns this email.
+OAuth.syncVerifiedEmail = async (uid, email) => {
+	const current = await user.getUserFields(uid, ['email', 'email:confirmed']);
+	if (current.email === email && parseInt(current['email:confirmed'], 10) === 1) {
+		return;
+	}
+
+	const ownerUid = await user.getUidByEmail(email);
+	if (ownerUid && parseInt(ownerUid, 10) !== parseInt(uid, 10)) {
+		winston.warn(`[plugin/sso-oauth2-multiple] Email of uid ${uid} not synced: already used by uid ${ownerUid}`);
+		return;
+	}
+
+	try {
+		if (current.email !== email) {
+			await user.setUserField(uid, 'email', email);
+		}
+		await user.email.confirmByUid(uid);
+	} catch (err) {
+		winston.warn(`[plugin/sso-oauth2-multiple] Email of uid ${uid} not confirmed: ${err.message}`);
+	}
 };
 
 OAuth.assignGroups = async ({ user, profile }) => {
