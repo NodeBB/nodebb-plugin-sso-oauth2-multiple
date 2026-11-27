@@ -91,7 +91,7 @@ OAuth.loadStrategies = async (strategies) => {
 		clientID,
 		clientSecret,
 		callbackURL,
-		state: true,
+		state: true, // passport manages the state query parameter
 		pkce: usePkce ? true : false,
 		passReqToCallback: true,
 	}, async (req, token, secret, profile, done) => {
@@ -124,9 +124,9 @@ OAuth.loadStrategies = async (strategies) => {
 		passport.use(configured[idx].name, strategy);
 	});
 
-	strategies.push(...configured.map(({ name, scope, loginLabel, registerLabel, faIcon, usePkce }) => ({
+	strategies.push(...configured.map(({ name, scope, loginLabel, registerLabel, faIcon }) => ({
 		name,
-		checkState: usePkce ? false : true,
+		checkState: false, // passport manages the state query parameter
 		url: `/auth/${name}`,
 		callbackURL: `/auth/${name}/callback`,
 		icon: faIcon || 'fa-right-to-bracket',
