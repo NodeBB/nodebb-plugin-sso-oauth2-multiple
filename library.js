@@ -9,6 +9,8 @@ const user = nodebb.require('./src/user');
 const plugins = nodebb.require('./src/plugins');
 const meta = nodebb.require('./src/meta');
 const groups = nodebb.require('./src/groups');
+const utils = nodebb.require('./src/utils');
+const slugify = nodebb.require('./src/slugify');
 const authenticationController = nodebb.require('./src/controllers/authentication');
 const routeHelpers = nodebb.require('./src/routes/helpers');
 
@@ -236,7 +238,7 @@ OAuth.login = async (payload) => {
 	if (!uid) {
 		// New user
 		uid = await user.create({
-			username: payload.handle,
+			username: OAuth.safeUsername(payload.handle, email, payload.oAuthid),
 		});
 
 		// Automatically confirm user email
@@ -254,6 +256,24 @@ OAuth.login = async (payload) => {
 	await db.setObjectField(`${payload.name}Id:uid`, payload.oAuthid, uid);
 
 	return { uid };
+};
+
+// NodeBB refuses some characters in usernames (invalid-username), which would make the login fail:
+// strip them, then fall back to the email local part, then to the provider id.
+// An email used as username keeps only its local part, so the address is not shown publicly.
+// Taken usernames are not handled here: NodeBB adds a suffix itself.
+OAuth.safeUsername = (handle, email, oAuthid) => {
+	const allowed = /[^'" \-+.*[\]0-9\u00BF-\u1FFF\u2C00-\uD7FF\w]/g;
+	const clean = value => String(value || '').replace(allowed, '').replace(/\s+/g, ' ').trim();
+	const isValid = name => utils.isUserNameValid(name) && utils.isSlugValid(slugify(name));
+
+	const localPart = value => String(value || '').split('@')[0];
+	const candidates = [clean(localPart(handle)), clean(localPart(email)), `user-${oAuthid}`];
+	const username = candidates.find(isValid) || `user-${Date.now()}`;
+	if (username !== handle) {
+		winston.info(`[plugin/sso-oauth2-multiple] Username "${handle}" changed to "${username}" (characters refused by NodeBB)`);
+	}
+	return username;
 };
 
 // Sets the provider's verified email on an existing user and confirms it.
