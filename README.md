@@ -20,6 +20,27 @@ If you'd like to help this plugin play nice with other providers, please
 v1.4.0 of this plugin introduces the ability to update a user's full name and picture with data supplied by the remote userinfo endpoint.
 The functionality (including which fields to sync/ignore) can be configured on a per-strategy basis, under the "Adjustments" menu when editing a strategy.
 
+## Provider Logout (RP-Initiated Logout)
+
+By default, logging out of NodeBB only clears the local forum session: the session held by the
+OAuth2/OIDC provider survives, so the next login silently re-authenticates the user without asking
+for credentials.
+
+Filling in the optional **Logout URL** field of a strategy (the provider's `end_session_endpoint`)
+makes NodeBB redirect to the provider after the local logout, ending the session there as well. The
+request carries the strategy's `client_id` and a `post_logout_redirect_uri` pointing back to the
+forum — most providers require that URI to be registered beforehand, and compare it strictly.
+
+Leave the field empty to keep the previous behaviour.
+
+Two known limitations:
+
+* The `filter:user.logout` hook carries no `uid`, so the strategy backing the session cannot be
+  identified. Provider logout is therefore skipped when several enabled strategies define a logout
+  URL.
+* Access tokens already issued are not invalidated by this, since they are self-contained. Ending
+  the provider session only stops silent re-authentication.
+
 ## Role-Based Access Control
 
 This plugin is able to sort users into specific user groups based on user roles.

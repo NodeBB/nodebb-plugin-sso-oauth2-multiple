@@ -9,6 +9,8 @@ const user = nodebb.require('./src/user');
 const plugins = nodebb.require('./src/plugins');
 const meta = nodebb.require('./src/meta');
 const groups = nodebb.require('./src/groups');
+const utils = nodebb.require('./src/utils');
+const slugify = nodebb.require('./src/slugify');
 const authenticationController = nodebb.require('./src/controllers/authentication');
 const routeHelpers = nodebb.require('./src/routes/helpers');
 
@@ -217,17 +219,20 @@ OAuth.getAssociations = async () => {
 };
 
 OAuth.login = async (payload) => {
-	let uid = await OAuth.getUidByOAuthid(payload.name, payload.oAuthid);
-	if (uid !== null) {
-		// Existing User
-		return ({ uid });
-	}
-
 	const { trustEmailVerified } = await OAuth.getStrategy(payload.name);
 	const { email } = payload;
 	const email_verified =
 		parseInt(trustEmailVerified, 10) &&
 		(payload.email_verified || payload.email_verified === true);
+
+	let uid = await OAuth.getUidByOAuthid(payload.name, payload.oAuthid);
+	if (uid !== null) {
+		// Existing user: keep the email in sync with the provider when the provider is trusted
+		if (email && email_verified) {
+			await OAuth.syncVerifiedEmail(uid, email);
+		}
+		return ({ uid });
+	}
 
 
 	// Check for user via email fallback
@@ -238,7 +243,7 @@ OAuth.login = async (payload) => {
 	if (!uid) {
 		// New user
 		uid = await user.create({
-			username: payload.handle,
+			username: OAuth.safeUsername(payload.handle, email, payload.oAuthid),
 		});
 
 		// Automatically confirm user email
@@ -256,6 +261,48 @@ OAuth.login = async (payload) => {
 	await db.setObjectField(`${payload.name}Id:uid`, payload.oAuthid, uid);
 
 	return { uid };
+};
+
+// NodeBB refuses some characters in usernames (invalid-username), which would make the login fail:
+// strip them, then fall back to the email local part, then to the provider id.
+// An email used as username keeps only its local part, so the address is not shown publicly.
+// Taken usernames are not handled here: NodeBB adds a suffix itself.
+OAuth.safeUsername = (handle, email, oAuthid) => {
+	const allowed = /[^'" \-+.*[\]0-9\u00BF-\u1FFF\u2C00-\uD7FF\w]/g;
+	const clean = value => String(value || '').replace(allowed, '').replace(/\s+/g, ' ').trim();
+	const isValid = name => utils.isUserNameValid(name) && utils.isSlugValid(slugify(name));
+
+	const localPart = value => String(value || '').split('@')[0];
+	const candidates = [clean(localPart(handle)), clean(localPart(email)), `user-${oAuthid}`];
+	const username = candidates.find(isValid) || `user-${Date.now()}`;
+	if (username !== handle) {
+		winston.info(`[plugin/sso-oauth2-multiple] Username "${handle}" changed to "${username}" (characters refused by NodeBB)`);
+	}
+	return username;
+};
+
+// Sets the provider's verified email on an existing user and confirms it.
+// Skipped (with a warning) when another account already owns this email.
+OAuth.syncVerifiedEmail = async (uid, email) => {
+	const current = await user.getUserFields(uid, ['email', 'email:confirmed']);
+	if (current.email === email && parseInt(current['email:confirmed'], 10) === 1) {
+		return;
+	}
+
+	const ownerUid = await user.getUidByEmail(email);
+	if (ownerUid && parseInt(ownerUid, 10) !== parseInt(uid, 10)) {
+		winston.warn(`[plugin/sso-oauth2-multiple] Email of uid ${uid} not synced: already used by uid ${ownerUid}`);
+		return;
+	}
+
+	try {
+		if (current.email !== email) {
+			await user.setUserField(uid, 'email', email);
+		}
+		await user.email.confirmByUid(uid);
+	} catch (err) {
+		winston.warn(`[plugin/sso-oauth2-multiple] Email of uid ${uid} not confirmed: ${err.message}`);
+	}
 };
 
 OAuth.assignGroups = async ({ user, profile }) => {
@@ -336,4 +383,33 @@ OAuth.whitelistFields = async (params) => {
 	params.whitelist.push(...names.map(name => `${name}Id`));
 
 	return params;
+};
+
+OAuth.handleLogout = async (payload) => {
+	const strategies = await OAuth.listStrategies(true);
+	const candidates = strategies.filter(strategy => strategy.enabled && strategy.logoutUrl);
+	if (!candidates.length) {
+		return payload;
+	}
+
+	// This filter carries no uid, so the strategy backing the session cannot be resolved
+	// when several providers advertise a logout url.
+	if (candidates.length > 1) {
+		winston.warn('[plugin/sso-oauth2-multiple] Several enabled strategies define a logout url, skipping provider logout');
+		return payload;
+	}
+
+	const [strategy] = candidates;
+	try {
+		const endSession = new URL(strategy.logoutUrl);
+		endSession.searchParams.set('client_id', strategy.id);
+		// Providers compare this uri strictly, hence the enforced trailing slash
+		endSession.searchParams.set('post_logout_redirect_uri', `${nconf.get('url').replace(/\/$/, '')}/`);
+		payload.next = endSession.toString();
+	} catch (err) {
+		// A malformed logout url must not prevent the local logout from completing
+		winston.error(`[plugin/sso-oauth2-multiple] Invalid logout url for strategy ${strategy.name}: ${err.message}`);
+	}
+
+	return payload;
 };

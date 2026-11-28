@@ -79,6 +79,15 @@
 				</div>
 
 				<div class="mb-3">
+					<label class="form-label" for="logoutUrl">Logout URL</label>
+					<input type="text" id="logoutUrl" name="logoutUrl" title="Logout URL" class="form-control" placeholder="https://..." value="{./logoutUrl}">
+					<p class="form-text">
+						<strong>Optional</strong> &mdash; the provider's <code>end_session_endpoint</code>.
+						If set, logging out of NodeBB also ends the session at the provider (OIDC RP-Initiated Logout).
+					</p>
+				</div>
+
+				<div class="mb-3">
 					<label class="form-label" for="scope">Scope</label>
 					<input type="text" id="scope" name="scope" title="User Info URL" class="form-control" placeholder="openid email profile" value="{./scope}">
 					<p class="form-text">
